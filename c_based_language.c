@@ -239,38 +239,58 @@ void free_ast(ASTNode *node);
 void print_indent(int depth);
 
 /**
- * Parser Grammar (CFG) — As Implemented
- *
- * program → stmt_list TOK_EOF
- *
- * stmt_list → stmt stmt_list | ε
- *
- * stmt → type init_list TOK_SEMICOLON | assignment TOK_SEMICOLON | unary_stmt TOK_SEMICOLON | TOK_SEMICOLON
- *
- * type → TOK_INT | TOK_CHAR
- *
- * init_list → init | init TOK_COMMA init_list
- *
- * init → TOK_IDENT | TOK_IDENT TOK_ASSIGN assignment_expression
- *
- * assignment → assignment_expression
- *
- * assignment_expression → additive_expression | TOK_IDENT assign_op comma_expression
- *
- * assign_op → TOK_ASSIGN | TOK_PLUS_ASSIGN | TOK_MINUS_ASSIGN | TOK_MULT_ASSIGN | TOK_DIV_ASSIGN
- *
- * comma_expression → assignment_expression | assignment_expression TOK_COMMA comma_expression
- *
- * additive_expression → term | additive_expression TOK_PLUS term | additive_expression TOK_MINUS term
- *
- * term → factor | term TOK_MULT factor | term TOK_DIV factor
- *
- * factor → TOK_NUMBER | TOK_CHAR_LITERAL | postfix_expression | TOK_LPAREN comma_expression TOK_RPAREN
- *          | TOK_PLUS factor | TOK_MINUS factor | TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT
- *
- * postfix_expression → TOK_IDENT | TOK_IDENT TOK_INCREMENT | TOK_IDENT TOK_DECREMENT
- *
- * unary_stmt → TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT
+        <program> ::= <stmt_list> TOK_EOF
+
+        <stmt_list> ::= <stmt> <stmt_list_tail>
+        <stmt_list_tail> ::= <stmt> <stmt_list_tail> | ε
+
+        <stmt> ::= <decl_stmt> <semi_tail>
+                | <assign_stmt> <semi_tail>
+                | <unary_stmt> <semi_tail>
+                | <semi_tail>
+
+        <semi_tail> ::= TOK_SEMICOLON <semi_tail> | ε
+
+        <decl_stmt> ::= <type_spec> <init_list>
+        <type_spec> ::= TOK_INT | TOK_CHAR
+        <init_list> ::= <init> <init_list_tail>
+        <init_list_tail> ::= TOK_COMMA <init> <init_list_tail> | ε
+        <init> ::= TOK_IDENT [ TOK_ASSIGN <assignment_expression> ]
+
+        <assign_stmt> ::= <assignment_expression>
+        <assignment_expression> ::= <additive_expression> <assign_op_tail>
+        <assign_op_tail> ::= TOK_ASSIGN <comma_expression>
+                        | TOK_PLUS_ASSIGN <comma_expression>
+                        | TOK_MINUS_ASSIGN <comma_expression>
+                        | TOK_MULT_ASSIGN <comma_expression>
+                        | TOK_DIV_ASSIGN <comma_expression>
+                        | ε
+
+        <comma_expression> ::= <assignment_expression> <comma_tail>
+        <comma_tail> ::= TOK_COMMA <comma_expression> | ε
+
+        <additive_expression> ::= <term> <additive_tail>
+        <additive_tail> ::= TOK_PLUS <term> <additive_tail>
+                        | TOK_MINUS <term> <additive_tail>
+                        | ε
+
+        <term> ::= <factor> <term_tail>
+        <term_tail> ::= TOK_MULT <factor> <term_tail>
+                    | TOK_DIV <factor> <term_tail>
+                    | ε
+
+        <factor> ::= TOK_NUMBER
+                | TOK_CHAR_LITERAL
+                | TOK_INCREMENT TOK_IDENT
+                | TOK_DECREMENT TOK_IDENT
+                | TOK_IDENT <postfix_op>
+                | TOK_LPAREN <comma_expression> TOK_RPAREN
+                | TOK_PLUS <factor>
+                | TOK_MINUS <factor>
+
+        <postfix_op> ::= TOK_INCREMENT | TOK_DECREMENT | ε
+        <unary_stmt> ::= TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT
+
  */
 
 ASTNode *parse_program();
@@ -778,6 +798,7 @@ void check_unary_operation(ASTNode *node)
  */
 void check_declaration(ASTNode *node)
 {
+    // Check if the Node type is correct and that the left side of the node is not null
     if (node->type != NODE_VAR_DECL || node->left == NULL)
         return;
 
@@ -2214,9 +2235,9 @@ void free_ast(ASTNode *node)
     free(node);
 }
 
-/**
- * CFG Variable <program> - <stmt_list>
- */
+/*
+program → stmt_list TOK_EOF
+*/
 ASTNode *parse_program()
 {
     ASTNode *stmts = parse_stmt_list(); // Get Node for stmt_list
@@ -2228,7 +2249,9 @@ ASTNode *parse_program()
     return program;
 }
 
-// CFG Variable - <stmt_list> -> <stmt> <stmt_list> | <stmt>
+/*
+stmt_list → stmt stmt_list | ε
+*/
 ASTNode *parse_stmt_list()
 {
     if (current_token.type == TOK_EOF)
@@ -2247,6 +2270,7 @@ ASTNode *parse_stmt_list()
         {
             advance_token();
         }
+
         if (current_token.type != TOK_EOF)
         {
             return parse_stmt_list();
@@ -2283,7 +2307,15 @@ ASTNode *parse_stmt_list()
     return head;
 }
 
-// <stmt> -> <init_list> TOK_SEMICOLON | <assignment_stmt> TOK_SEMICOLON | TOK_SEMICOLON
+/*
+stmt → TOK_INT init_list TOK_SEMICOLON
+      | TOK_CHAR init_list TOK_SEMICOLON
+      | TOK_INCREMENT factor TOK_SEMICOLON
+      | TOK_DECREMENT factor TOK_SEMICOLON
+      | TOK_IDENT assignment TOK_SEMICOLON
+      | TOK_SEMICOLON
+
+*/
 ASTNode *parse_stmt()
 {
     if (current_token.type == TOK_INT || current_token.type == TOK_CHAR)
@@ -2294,6 +2326,7 @@ ASTNode *parse_stmt()
 
         if (current_token.type == TOK_SEMICOLON)
         {
+            // This allows multiple semi colon at the end of the line e.g int a = b ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
             while (current_token.type == TOK_SEMICOLON)
                 advance_token();
         }
@@ -2343,7 +2376,9 @@ ASTNode *parse_stmt()
     }
 }
 
-// <init_list> -> <init> | <init> TOK_COMMA <init_list>
+/*
+init_list → init | init TOK_COMMA init_list
+*/
 ASTNode *parse_init_list(Token type_token)
 {
     ASTNode *first_decl = parse_init(type_token);
@@ -2394,7 +2429,9 @@ ASTNode *parse_init_list(Token type_token)
     }
 }
 
-// <init> -> TOK_IDENT | TOK_IDENT TOK_ASSIGN <assign_expr>
+/*
+init → TOK_IDENT | TOK_IDENT TOK_ASSIGN assignment_expression
+*/
 ASTNode *parse_init(Token type_token)
 {
     if (current_token.type != TOK_IDENT)
@@ -2403,24 +2440,32 @@ ASTNode *parse_init(Token type_token)
         return NULL;
     }
 
+    // get the current token for the identifier
     Token ident = current_token;
+    // Get the next/new token ahead of the idenfier
     advance_token();
 
+    // Create the idenfier node . e.g int a;
     ASTNode *ident_node = create_ast_node(NODE_IDENT, ident, NULL, NULL);
     if (!ident_node)
         return NULL;
 
+    // Create the declaration node e.g int a, b , c, d ..... ;
     ASTNode *decl_node = create_ast_node(NODE_VAR_DECL, type_token, ident_node, NULL);
+
     if (!decl_node)
     {
         free_ast(ident_node);
         return NULL;
     }
 
+    // If the current token is an ASSIGN token, then get the next token and parse the assignent expression.
     if (current_token.type == TOK_ASSIGN)
     {
         advance_token();
         ASTNode *expr = parse_assignment_expression();
+
+        // If the expr is valid , then the right side of the decl_node is set to the expr.
         if (expr != NULL)
         {
             decl_node->right = expr;
@@ -2429,7 +2474,10 @@ ASTNode *parse_init(Token type_token)
 
     return decl_node;
 }
-// <assignment_stmt> -> <assign_expr>
+
+/*
+assignment → assignment_expression
+*/
 ASTNode *parse_assignment()
 {
     ASTNode *node = parse_assignment_expression();
@@ -2438,7 +2486,9 @@ ASTNode *parse_assignment()
     return node;
 }
 
-// <assign_expr> -> TOK_IDENT TOK_ASSIGN <assign_expr> | <expr>
+/*
+assignment_expression → additive_expression | TOK_IDENT assign_op comma_expression
+*/
 ASTNode *parse_assignment_expression()
 {
     ASTNode *left = parse_additive_expression();
@@ -2511,7 +2561,9 @@ ASTNode *parse_assignment_expression()
     return left;
 }
 
-// <comma_expr> -> <assign_expr> | <assign_expr> TOK_COMMA <comma_expr>
+/*
+comma_expression → assignment_expression | assignment_expression TOK_COMMA comma_expression
+*/
 ASTNode *parse_comma_expression()
 {
     ASTNode *left = parse_assignment_expression();
@@ -2536,7 +2588,9 @@ ASTNode *parse_comma_expression()
     return left;
 }
 
-// <expr> -> <term> <expr_tail>
+/*
+additive_expression → term additive_tail
+*/
 ASTNode *parse_additive_expression()
 {
     ASTNode *left = parse_term();
@@ -2547,7 +2601,11 @@ ASTNode *parse_additive_expression()
     return parse_additive_tail(left);
 }
 
-// <expr_tail> -> TOK_PLUS <term> <expr_tail> | TOK_MINUS <term> <expr_tail> | ε
+/*
+<additive_tail> ::= TOK_PLUS <term> <additive_tail>
+                        | TOK_MINUS <term> <additive_tail>
+                        | ε
+*/
 ASTNode *parse_additive_tail(ASTNode *left)
 {
     while (current_token.type == TOK_PLUS || current_token.type == TOK_MINUS)
@@ -2570,7 +2628,9 @@ ASTNode *parse_additive_tail(ASTNode *left)
     return left;
 }
 
-// <term> -> <factor> <term_tail>
+/*
+term → factor term_tail
+*/
 ASTNode *parse_term()
 {
     ASTNode *left = parse_factor();
@@ -2581,7 +2641,11 @@ ASTNode *parse_term()
     return parse_term_tail(left);
 }
 
-// <term_tail> -> TOK_MULT <factor> <term_tail> | TOK_DIV <factor> <term_tail> | ε
+/*
+<term_tail> ::= TOK_MULT <factor> <term_tail>
+                    | TOK_DIV <factor> <term_tail>
+                    | ε
+*/
 ASTNode *parse_term_tail(ASTNode *left)
 {
     while (current_token.type == TOK_MULT || current_token.type == TOK_DIV)
@@ -2604,7 +2668,17 @@ ASTNode *parse_term_tail(ASTNode *left)
     return left;
 }
 
-// <factor> -> TOK_NUMBER | TOK_CHAR_LITERAL | TOK_IDENT | TOK_LPAREN <comma_expr> TOK_RPAREN | TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT | TOK_PLUS <factor> | TOK_MINUS <factor>
+/*
+factor → TOK_NUMBER | TOK_CHAR_LITERAL
+        | TOK_INCREMENT TOK_IDENT
+        | TOK_DECREMENT TOK_IDENT
+        | TOK_IDENT
+        | TOK_IDENT TOK_INCREMENT
+        | TOK_IDENT TOK_DECREMENT
+        | TOK_LPAREN comma_expression TOK_RPAREN
+        | TOK_PLUS factor
+        | TOK_MINUS factor
+*/
 ASTNode *parse_factor()
 {
     if (current_token.type == TOK_NUMBER)
@@ -2701,7 +2775,9 @@ ASTNode *parse_factor()
     }
 }
 
-// postfix_expression → TOK_IDENT | TOK_IDENT TOK_INCREMENT | TOK_IDENT TOK_DECREMENT
+/*
+postfix_expression → TOK_IDENT | TOK_IDENT TOK_INCREMENT | TOK_IDENT TOK_DECREMENT
+*/
 ASTNode *parse_postfix_expression()
 {
     if (current_token.type != TOK_IDENT)
@@ -2715,7 +2791,6 @@ ASTNode *parse_postfix_expression()
 
     ASTNode *ident_node = create_ast_node(NODE_IDENT, ident, NULL, NULL);
 
-
     if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
     {
         Token op = current_token;
@@ -2727,7 +2802,10 @@ ASTNode *parse_postfix_expression()
 
     return ident_node;
 }
-// <expression> -> <assign_expr>
+
+/*
+expression → assignment_expression
+*/
 ASTNode *parse_expression()
 {
     return parse_assignment_expression();
