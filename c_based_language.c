@@ -14,7 +14,12 @@ typedef enum
     TOK_IDENT,        // Token for Identifiers
     TOK_NUMBER,       // Token for Numbers
     TOK_CHAR_LITERAL, // Token for Character Literals ex. 'A'
+    TOK_UNARY_OP,     // Token for Unary Operators '++' and '--'
     TOK_ASSIGN,       // Token for Assignment Operator '='
+    TOK_PLUS_ASSIGN,
+    TOK_MINUS_ASSIGN,
+    TOK_MULT_ASSIGN,
+    TOK_DIV_ASSIGN,
     TOK_PLUS,         // Token for Addition Operator '+'
     TOK_MINUS,        // Token for Subtraction Operator '-'
     TOK_MULT,         // Token for Multiplication Operator '*'
@@ -23,6 +28,8 @@ typedef enum
     TOK_LPAREN,       // Token for Left Parenthesis '('
     TOK_RPAREN,       // Token for Right Parenthesis ')'
     TOK_COMMA,        // Token for Comma ','
+    TOK_INCREMENT,    // Token for Increment Operator '++'
+    TOK_DECREMENT,    // Token for Decrement Operator '--'
     TOK_EOF,          // Token for End of File
     TOK_ERROR         // Token for Error/ Unknown Token
 } TokenType;
@@ -47,7 +54,9 @@ typedef enum
     NODE_PROGRAM,        // Node for Program Root
     NODE_STATEMENT_LIST, // Node for Statement List
     NODE_DECL_LIST,      // Node for Declaration List
-    NODE_CHAR_LITERAL    // Node for Character Literals
+    NODE_CHAR_LITERAL,   // Node for Character Literals
+    NODE_UNARY_OP,        // Node for Unary Operations
+    NODE_COMMA_EXPR      // Node for Comma Expressions
 } NodeType;
 
 // Enum definition for Three Address Code (TAC) Types
@@ -59,6 +68,8 @@ typedef enum
     TAC_MUL,    // TAC for Multiplication Operation
     TAC_DIV,    // TAC for Division Operation
     TAC_COPY,   // TAC for Copy Operation
+    TAC_INC,    // TAC for Increment Operation
+    TAC_DEC,    // TAC for Decrement Operation
 } TACType;
 
 // Enum definition for MIPS Instruction Types
@@ -228,31 +239,42 @@ void print_ast(ASTNode *node, int depth);
 void free_ast(ASTNode *node);
 void print_indent(int depth);
 
+
 /**
  * Parser Grammar (CFG) — As Implemented
  *
  * program → stmt_list TOK_EOF
  *
- * stmt_list → stmt stmt_list| ε
- *  
- * stmt → type init_list TOK_SEMICOLON | assignment TOK_SEMICOLON| TOK_SEMICOLON
+ * stmt_list → stmt stmt_list | ε
  * 
- * type → TOK_INT| TOK_CHAR      
- *
- * init_list → init| init_list TOK_COMMA init   
- *
- * init → IDENT | IDENT TOK_ASSIGN assignment_expression
- *        
+ * stmt → type init_list TOK_SEMICOLON | assignment TOK_SEMICOLON | unary_stmt TOK_SEMICOLON | TOK_SEMICOLON
+ * 
+ * type → TOK_INT | TOK_CHAR
+ * 
+ * init_list → init | init TOK_COMMA init_list
+ * 
+ * init → TOK_IDENT | TOK_IDENT TOK_ASSIGN assignment_expression
+ * 
  * assignment → assignment_expression
- *
- * assignment_expression → additive_expression |IDENT TOK_ASSIGN assignment_expression
- *                       
- * additive_expression → term  | additive_expression TOK_PLUS term | additive_expression TOK_MINUS term
- *                    
+ * 
+ * assignment_expression → additive_expression | TOK_IDENT assign_op comma_expression
+ * 
+ * assign_op → TOK_ASSIGN | TOK_PLUS_ASSIGN | TOK_MINUS_ASSIGN | TOK_MULT_ASSIGN | TOK_DIV_ASSIGN
+ * 
+ * comma_expression → assignment_expression | assignment_expression TOK_COMMA comma_expression
+ * 
+ * additive_expression → term | additive_expression TOK_PLUS term | additive_expression TOK_MINUS term
+ * 
  * term → factor | term TOK_MULT factor | term TOK_DIV factor
- *
- * factor → TOK_NUMBER | TOK_CHAR_LITERAL  | TOK_IDENT  | TOK_LPAREN assignment_expression TOK_RPAREN| TOK_MINUS factor
+ * 
+ * factor → TOK_NUMBER | TOK_CHAR_LITERAL | postfix_expression | TOK_LPAREN comma_expression TOK_RPAREN 
+ *          | TOK_PLUS factor | TOK_MINUS factor | TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT
+ * 
+ * postfix_expression → TOK_IDENT | TOK_IDENT TOK_INCREMENT | TOK_IDENT TOK_DECREMENT
+ * 
+ * unary_stmt → TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT
  */
+
 
 ASTNode *parse_program();
 ASTNode *parse_stmt_list();
@@ -263,12 +285,13 @@ ASTNode *parse_init(Token type_token);
 ASTNode *parse_assignment();
 ASTNode *parse_expression();
 ASTNode *parse_assignment_expression();
+ASTNode *parse_comma_expression();
 ASTNode *parse_additive_expression();
 ASTNode *parse_additive_tail(ASTNode *left);
 ASTNode *parse_term();
 ASTNode *parse_term_tail(ASTNode *left);
 ASTNode *parse_factor();
-
+ASTNode *parse_postfix_expression();
 // Semantic  Analysis Function Prototypes
 void init_symbol_table();
 Symbol *lookup_symbol(const char *name);
@@ -282,6 +305,7 @@ void check_declaration(ASTNode *node);
 void check_assignment(ASTNode *node);
 void check_expression(ASTNode *node);
 DataType get_expression_type(ASTNode *node);
+void check_unary_operation(ASTNode *node);
 
 // Parse and Semantic Error Handling Function Prototypes
 void record_error(int line, const char *message);
@@ -714,7 +738,7 @@ void semantic_analysis(ASTNode *node)
         check_assignment(node);
         break;
     case NODE_IDENT:
-        if (lookup_symbol(node->token.value) == NULL) // If node is of type Identifier assignment and use but is not declared , then add error
+        if (lookup_symbol(node->token.value) == NULL)
         {
             char error_msg[256];
             snprintf(error_msg, sizeof(error_msg),
@@ -726,10 +750,51 @@ void semantic_analysis(ASTNode *node)
     case NODE_BIN_OP:
         check_expression(node);
         break;
+    case NODE_UNARY_OP:
+        check_unary_operation(node);
+        break;
+    case NODE_COMMA_EXPR:  // NEW: Handle comma expressions
+        // Just check both sides, no type checking needed
+        // The result type is the type of the right operand
+        semantic_analysis(node->left);
+        semantic_analysis(node->right);
+        return;  // Don't recurse again below
     }
 
-    semantic_analysis(node->left);  // Recursively traverse the left node of the AST
-    semantic_analysis(node->right); // Recursively traverse the right node of the AST
+    semantic_analysis(node->left);
+    semantic_analysis(node->right);
+}
+
+void check_unary_operation(ASTNode *node)
+{
+    if (node->type != NODE_UNARY_OP || node->left == NULL)
+        return;
+    
+    if (node->left->type != NODE_IDENT)
+    {
+        record_error(node->token.line, "Increment/decrement requires a variable");
+        semantic_errors++;
+        return;
+    }
+    
+    Symbol *symbol = lookup_symbol(node->left->token.value);
+    if (symbol == NULL)
+    {
+        char error_msg[256];
+        snprintf(error_msg, sizeof(error_msg),
+                 "Undeclared variable '%s' in increment/decrement",
+                 node->left->token.value);
+        record_error(node->left->token.line, error_msg);
+        semantic_errors++;
+        return;
+    }
+    
+    // Only int and char types can be incremented/decremented
+    if (symbol->type != TYPE_INT && symbol->type != TYPE_CHAR)
+    {
+        record_error(node->token.line, "Increment/decrement requires numeric type");
+        semantic_errors++;
+    }
 }
 
 /**
@@ -915,34 +980,38 @@ DataType get_expression_type(ASTNode *node)
     {
     case NODE_IDENT:
     {
-        Symbol *symbol = lookup_symbol(node->token.value); // If node is of type identifier then look for the type of the identifier.
+        Symbol *symbol = lookup_symbol(node->token.value);
         if (symbol == NULL)
         {
             return TYPE_ERROR;
         }
         return symbol->type;
     }
-    case NODE_NUMBER: // If node is of Type number then return type int
+    case NODE_NUMBER:
         return TYPE_INT;
-    case NODE_CHAR_LITERAL: // If not is char then return type char
+    case NODE_CHAR_LITERAL:
         return TYPE_CHAR;
-    case NODE_BIN_OP: // If node is of type binary operator then :
+    case NODE_BIN_OP:
     {
-        DataType left_type = get_expression_type(node->left);   // Get data type of left node of op node
-        DataType right_type = get_expression_type(node->right); // Get data type of right node of op node
+        DataType left_type = get_expression_type(node->left);
+        DataType right_type = get_expression_type(node->right);
 
-        if (left_type == TYPE_INT || right_type == TYPE_INT) // If both int then type int
+        if (left_type == TYPE_INT || right_type == TYPE_INT)
         {
             return TYPE_INT;
         }
-        if (left_type == TYPE_CHAR && right_type == TYPE_CHAR) // If both char then type char
+        if (left_type == TYPE_CHAR && right_type == TYPE_CHAR)
         {
             return TYPE_CHAR;
         }
-        return TYPE_ERROR; // If none then then its and error
+        return TYPE_ERROR;
     }
-    case NODE_ASSIGN:                           // If it is assignment then recursively get the data type of the left not of the assignment op
-        return get_expression_type(node->left); // specifically get the data type of the identifier
+    case NODE_UNARY_OP:
+        return get_expression_type(node->left);
+    case NODE_ASSIGN:
+        return get_expression_type(node->left);
+    case NODE_COMMA_EXPR:  // NEW: Comma expression type is the type of rightmost expr
+        return get_expression_type(node->right);
     default:
         return TYPE_ERROR;
     }
@@ -1014,6 +1083,12 @@ void print_tac(TACNode *tac)
         case TAC_COPY:
             printf("%s = %s\n", current->result, current->arg1);
             break;
+        case TAC_INC:  // New case
+            printf("%s = %s + %s\n", current->result, current->arg1, current->arg2);
+            break;
+        case TAC_DEC:  // New case
+            printf("%s = %s - %s\n", current->result, current->arg1, current->arg2);
+            break;
         default:
             printf("Unknown TAC instruction\n");
         }
@@ -1048,17 +1123,17 @@ void free_tac(TACNode *tac)
 
 TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
 {
-    if (node == NULL) // If the AST head node is NULL then it cannot generate tac
+    if (node == NULL)
         return NULL;
 
     switch (node->type)
     {
-    case NODE_IDENT: // If AST node type is of identifier
+    case NODE_IDENT:
     {
-        char *temp = get_temp_register();                                        // get available register
-        TACNode *tac = create_tac_node(TAC_COPY, temp, node->token.value, NULL); // Create TAC: temp = identifier
+        char *temp = get_temp_register();
+        TACNode *tac = create_tac_node(TAC_COPY, temp, node->token.value, NULL);
 
-        if (*tac_tail) // Append to TAC list
+        if (*tac_tail)
         {
             (*tac_tail)->next = tac;
             tac->prev = *tac_tail;
@@ -1071,7 +1146,7 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
     case NODE_CHAR_LITERAL:
     {
         char *temp = get_temp_register();
-        TACNode *tac = create_tac_node(TAC_ASSIGN, temp, node->token.value, NULL); // Create TAC: temp = literal_value
+        TACNode *tac = create_tac_node(TAC_ASSIGN, temp, node->token.value, NULL);
 
         if (*tac_tail)
         {
@@ -1084,7 +1159,6 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
 
     case NODE_BIN_OP:
     {
-        // Generate TAC for left and right operands recursively
         TACNode *left_tac = generate_tac_expr(node->left, tac_tail);
         char *left_temp = left_tac ? left_tac->result : NULL;
 
@@ -1094,10 +1168,9 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
         if (!left_temp || !right_temp)
             return NULL;
 
-        char *result_temp = get_temp_register(); // Allocate a new temporary register for the result
+        char *result_temp = get_temp_register();
         TACType op_type;
 
-        // Determine TAC operation based on token type
         switch (node->token.type)
         {
         case TOK_PLUS:
@@ -1116,9 +1189,8 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
             return NULL;
         }
 
-        TACNode *tac = create_tac_node(op_type, result_temp, left_temp, right_temp); // Create TAC: result_temp = left_temp op right_temp
+        TACNode *tac = create_tac_node(op_type, result_temp, left_temp, right_temp);
 
-        // Release operand temporaries if no longer needed
         free_temp_register(left_temp);
         free_temp_register(right_temp);
 
@@ -1133,13 +1205,12 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
 
     case NODE_ASSIGN:
     {
-        // Generate TAC for right-hand side (expression)
         TACNode *rhs_tac = generate_tac_expr(node->right, tac_tail);
         if (!rhs_tac)
             return NULL;
 
-        char *lhs_name = node->left->token.value;                                         // Get variable name on left-hand side
-        TACNode *assign_tac = create_tac_node(TAC_COPY, lhs_name, rhs_tac->result, NULL); // Create TAC: variable = rhs_result
+        char *lhs_name = node->left->token.value;
+        TACNode *assign_tac = create_tac_node(TAC_COPY, lhs_name, rhs_tac->result, NULL);
 
         if (*tac_tail)
         {
@@ -1148,16 +1219,80 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
         }
         *tac_tail = assign_tac;
 
-        char *result_temp = rhs_tac->result;
-
         return rhs_tac;
+    }
+
+    case NODE_COMMA_EXPR:  // NEW: Generate TAC for comma expressions
+    {
+        // Evaluate left side (for side effects)
+        TACNode *left_tac = generate_tac_expr(node->left, tac_tail);
+        
+        // Free the temporary from left if it's not used
+        if (left_tac && left_tac->result && is_register(left_tac->result))
+        {
+            free_temp_register(left_tac->result);
+        }
+        
+        // Evaluate right side (this is the result)
+        TACNode *right_tac = generate_tac_expr(node->right, tac_tail);
+        
+        // Return the right side result
+        return right_tac;
+    }
+
+    case NODE_UNARY_OP:
+    {
+        if (node->token.type == TOK_INCREMENT || node->token.type == TOK_DECREMENT)
+        {
+            if (node->left == NULL || node->left->type != NODE_IDENT)
+                return NULL;
+            
+            char *var_name = node->left->token.value;
+            TACType op_type = (node->token.type == TOK_INCREMENT) ? TAC_INC : TAC_DEC;
+            TACNode *op_tac = create_tac_node(op_type, var_name, var_name, "1");
+            
+            if (*tac_tail)
+            {
+                (*tac_tail)->next = op_tac;
+                op_tac->prev = *tac_tail;
+            }
+            *tac_tail = op_tac;
+            return op_tac;
+        }
+
+        if (node->token.type == TOK_PLUS)
+        {
+            return generate_tac_expr(node->left, tac_tail);
+        }
+
+        if (node->token.type == TOK_MINUS)
+        {
+            TACNode *operand_tac = generate_tac_expr(node->left, tac_tail);
+            if (!operand_tac)
+                return NULL;
+
+            char *operand = operand_tac->result;
+            char *temp = get_temp_register();
+            TACNode *neg_tac = create_tac_node(TAC_SUB, temp, "0", operand);
+
+            if (*tac_tail)
+            {
+                (*tac_tail)->next = neg_tac;
+                neg_tac->prev = *tac_tail;
+            }
+            *tac_tail = neg_tac;
+
+            free_temp_register(operand);
+            return neg_tac;
+        }
+
+        return NULL;
     }
 
     default:
         return NULL;
     }
 }
-
 /**
  * generate_tac_decl:
  * Generates TAC for variable declaration
@@ -1215,7 +1350,7 @@ TACNode *generate_tac_assign(ASTNode *node, TACNode **tac_tail)
 
     return expr_tac;
 }
-
+//this function process the statement list recursively and generate TAC for each statement
 void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
 {
     if (stmt_list == NULL)
@@ -1233,6 +1368,10 @@ void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
 
         case NODE_ASSIGN:
             generate_tac_assign(stmt, tac_tail);
+            break;
+
+        case NODE_UNARY_OP:  // Add this case
+            generate_tac_expr(stmt, tac_tail);
             break;
 
         case NODE_DECL_LIST:
@@ -1260,7 +1399,7 @@ void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
         process_stmt_list(stmt_list->right, tac_tail);
     }
 }
-
+//generate_tac
 TACNode *generate_tac(ASTNode *ast)
 {
     if (ast == NULL)
@@ -1418,6 +1557,54 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 instr = create_mips_instruction(MIPS_DADDIU, current->result, "zero", NULL, NULL, NULL, current->arg1);
             }
             break;
+            
+        case TAC_INC:  // Changed from TAC_INC
+        {
+            char offset_str[12];
+            sprintf(offset_str, "%d", get_var_memory_address(current->result));
+            
+            // Load variable
+            char *temp_reg = get_temp_register();
+            MIPSInstruction *load = create_mips_instruction(
+                MIPS_LD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
+            append_mips_instruction(&head, &tail, load);
+            
+            // Add 1
+            MIPSInstruction *add = create_mips_instruction(
+                MIPS_DADDIU, temp_reg, temp_reg, NULL, NULL, NULL, "1");
+            append_mips_instruction(&head, &tail, add);
+            
+            // Store back
+            instr = create_mips_instruction(
+                MIPS_SD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
+            
+            free_temp_register(temp_reg);
+        }
+        break;
+
+        case TAC_DEC:  // Changed from TAC_DEC
+        {
+            char offset_str[12];
+            sprintf(offset_str, "%d", get_var_memory_address(current->result));
+            
+            // Load variable
+            char *temp_reg = get_temp_register();
+            MIPSInstruction *load = create_mips_instruction(
+                MIPS_LD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
+            append_mips_instruction(&head, &tail, load);
+            
+            // Subtract 1
+            MIPSInstruction *sub = create_mips_instruction(
+                MIPS_DADDIU, temp_reg, temp_reg, NULL, NULL, NULL, "-1");
+            append_mips_instruction(&head, &tail, sub);
+            
+            // Store back
+            instr = create_mips_instruction(
+                MIPS_SD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
+            
+            free_temp_register(temp_reg);
+        }
+        break;
 
         case TAC_COPY:
         {
@@ -1425,7 +1612,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
 
             if (is_register(current->arg1))
             {
-
                 sprintf(offset_str, "%d", get_var_memory_address(current->result));
                 instr = create_mips_instruction(
                     MIPS_SD,
@@ -1437,7 +1623,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             }
             else
             {
-
                 sprintf(offset_str, "%d", get_var_memory_address(current->arg1));
                 instr = create_mips_instruction(
                     MIPS_LD,
@@ -1448,8 +1633,7 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                     NULL);
             }
         }
-        break;
-            break;
+        break;  // Removed duplicate break
 
         case TAC_ADD:
             instr = create_mips_instruction(MIPS_DADDU, current->arg2, current->arg1, current->result, NULL, NULL, NULL);
@@ -1809,39 +1993,49 @@ int expect_token(TokenType expected)
 
     char error_msg[256];
     const char *expected_str =
-        (expected == TOK_INT) ? "TOK_INT" : (expected == TOK_CHAR)       ? "TOK_CHAR"
-                                        : (expected == TOK_IDENT)        ? "TOK_IDENT"
-                                        : (expected == TOK_NUMBER)       ? "TOK_NUMBER"
-                                        : (expected == TOK_CHAR_LITERAL) ? "TOK_CHAR_LITERAL"
-                                        : (expected == TOK_ASSIGN)       ? "TOK_ASSIGN"
-                                        : (expected == TOK_PLUS)         ? "TOK_PLUS"
-                                        : (expected == TOK_MINUS)        ? "TOK_MINUS"
-                                        : (expected == TOK_MULT)         ? "TOK_MULT"
-                                        : (expected == TOK_DIV)          ? "TOK_DIV"
-                                        : (expected == TOK_SEMICOLON)    ? "TOK_SEMICOLON"
-                                        : (expected == TOK_LPAREN)       ? "TOK_LPAREN"
-                                        : (expected == TOK_RPAREN)       ? "TOK_RPAREN"
-                                        : (expected == TOK_COMMA)        ? "TOK_COMMA"
-                                        : (expected == TOK_EOF)          ? "TOK_EOF"
-                                                                         : "TOK_ERROR";
+        (expected == TOK_INT) ? "TOK_INT" 
+        : (expected == TOK_CHAR) ? "TOK_CHAR"
+        : (expected == TOK_IDENT) ? "TOK_IDENT"
+        : (expected == TOK_NUMBER) ? "TOK_NUMBER"
+        : (expected == TOK_CHAR_LITERAL) ? "TOK_CHAR_LITERAL"
+        : (expected == TOK_ASSIGN) ? "TOK_ASSIGN"
+        : (expected == TOK_PLUS_ASSIGN) ? "TOK_PLUS_ASSIGN"      // New
+        : (expected == TOK_MINUS_ASSIGN) ? "TOK_MINUS_ASSIGN"    // New
+        : (expected == TOK_MULT_ASSIGN) ? "TOK_MULT_ASSIGN"      // New
+        : (expected == TOK_DIV_ASSIGN) ? "TOK_DIV_ASSIGN"        // New
+        : (expected == TOK_PLUS) ? "TOK_PLUS"
+        : (expected == TOK_MINUS) ? "TOK_MINUS"
+        : (expected == TOK_MULT) ? "TOK_MULT"
+        : (expected == TOK_DIV) ? "TOK_DIV"
+        : (expected == TOK_SEMICOLON) ? "TOK_SEMICOLON"
+        : (expected == TOK_LPAREN) ? "TOK_LPAREN"
+        : (expected == TOK_RPAREN) ? "TOK_RPAREN"
+        : (expected == TOK_COMMA) ? "TOK_COMMA"
+        : (expected == TOK_INCREMENT) ? "TOK_INCREMENT"  // New
+        : (expected == TOK_DECREMENT) ? "TOK_DECREMENT"  // New
+        : (expected == TOK_EOF) ? "TOK_EOF"
+        : "TOK_ERROR";
 
     snprintf(error_msg, sizeof(error_msg), "Expected %s but found %s",
              expected_str,
-             (current_token.type == TOK_INT) ? "TOK_INT" : (current_token.type == TOK_CHAR)       ? "TOK_CHAR"
-                                                       : (current_token.type == TOK_IDENT)        ? "TOK_IDENT"
-                                                       : (current_token.type == TOK_NUMBER)       ? "TOK_NUMBER"
-                                                       : (current_token.type == TOK_CHAR_LITERAL) ? "TOK_CHAR_LITERAL"
-                                                       : (current_token.type == TOK_ASSIGN)       ? "TOK_ASSIGN"
-                                                       : (current_token.type == TOK_PLUS)         ? "TOK_PLUS"
-                                                       : (current_token.type == TOK_MINUS)        ? "TOK_MINUS"
-                                                       : (current_token.type == TOK_MULT)         ? "TOK_MULT"
-                                                       : (current_token.type == TOK_DIV)          ? "TOK_DIV"
-                                                       : (current_token.type == TOK_SEMICOLON)    ? "TOK_SEMICOLON"
-                                                       : (current_token.type == TOK_LPAREN)       ? "TOK_LPAREN"
-                                                       : (current_token.type == TOK_RPAREN)       ? "TOK_RPAREN"
-                                                       : (current_token.type == TOK_COMMA)        ? "TOK_COMMA"
-                                                       : (current_token.type == TOK_EOF)          ? "TOK_EOF"
-                                                                                                  : "TOK_ERROR");
+             (current_token.type == TOK_INT) ? "TOK_INT" 
+             : (current_token.type == TOK_CHAR) ? "TOK_CHAR"
+             : (current_token.type == TOK_IDENT) ? "TOK_IDENT"
+             : (current_token.type == TOK_NUMBER) ? "TOK_NUMBER"
+             : (current_token.type == TOK_CHAR_LITERAL) ? "TOK_CHAR_LITERAL"
+             : (current_token.type == TOK_ASSIGN) ? "TOK_ASSIGN"
+             : (current_token.type == TOK_PLUS) ? "TOK_PLUS"
+             : (current_token.type == TOK_MINUS) ? "TOK_MINUS"
+             : (current_token.type == TOK_MULT) ? "TOK_MULT"
+             : (current_token.type == TOK_DIV) ? "TOK_DIV"
+             : (current_token.type == TOK_SEMICOLON) ? "TOK_SEMICOLON"
+             : (current_token.type == TOK_LPAREN) ? "TOK_LPAREN"
+             : (current_token.type == TOK_RPAREN) ? "TOK_RPAREN"
+             : (current_token.type == TOK_COMMA) ? "TOK_COMMA"
+             : (current_token.type == TOK_INCREMENT) ? "TOK_INCREMENT"  // New
+             : (current_token.type == TOK_DECREMENT) ? "TOK_DECREMENT"  // New
+             : (current_token.type == TOK_EOF) ? "TOK_EOF"
+             : "TOK_ERROR");
 
     parser_error(error_msg);
     return 0;
@@ -1882,15 +2076,17 @@ void print_ast(ASTNode *node, int depth)
     print_indent(depth);
     const char *names[] = {
         "VAR_DECL", "ASSIGN", "BIN_OP", "NUMBER", "IDENT",
-        "PROGRAM", "STMT_LIST", "DECL_LIST", "CHAR_LITERAL"};
-    if (node->type >= 0 && node->type <= NODE_CHAR_LITERAL)
+        "PROGRAM", "STMT_LIST", "DECL_LIST", "CHAR_LITERAL", "UNARY_OP", "COMMA_EXPR"
+    };
+    if (node->type >= 0 && node->type <= NODE_COMMA_EXPR)
         printf("%s", names[node->type]);
     else
         printf("NODE?");
 
     if (node->type == NODE_IDENT || node->type == NODE_NUMBER ||
         node->type == NODE_BIN_OP || node->type == NODE_VAR_DECL ||
-        node->type == NODE_CHAR_LITERAL)
+        node->type == NODE_CHAR_LITERAL || node->type == NODE_UNARY_OP ||
+        node->type == NODE_COMMA_EXPR)
     {
         printf(" [%s]", node->token.value);
     }
@@ -1998,6 +2194,15 @@ ASTNode *parse_stmt()
         }
 
         return decls;
+    }
+    else if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
+    {
+        ASTNode *unary_stmt = parse_factor();  // reuse parse_factor for ++x / --x
+        if (current_token.type == TOK_SEMICOLON)
+            advance_token();
+        else
+            parser_error("Expected ';' after unary statement");
+        return unary_stmt;
     }
     else if (current_token.type == TOK_IDENT)
     {
@@ -2107,6 +2312,7 @@ ASTNode *parse_init(Token type_token)
     if (current_token.type == TOK_ASSIGN)
     {
         advance_token();
+        // This prevents: int a = 1, 2; which is invalid
         ASTNode *expr = parse_assignment_expression();
         if (expr != NULL)
         {
@@ -2116,7 +2322,6 @@ ASTNode *parse_init(Token type_token)
 
     return decl_node;
 }
-
 // <assignment_stmt> -> <assign_expr>
 ASTNode *parse_assignment()
 {
@@ -2129,12 +2334,15 @@ ASTNode *parse_assignment()
 // <assign_expr> -> TOK_IDENT TOK_ASSIGN <assign_expr> | <expr>
 ASTNode *parse_assignment_expression()
 {
-
     ASTNode *left = parse_additive_expression();
 
-    if (current_token.type == TOK_ASSIGN)
+    // Check for all assignment operators
+    if (current_token.type == TOK_ASSIGN ||
+        current_token.type == TOK_PLUS_ASSIGN ||
+        current_token.type == TOK_MINUS_ASSIGN ||
+        current_token.type == TOK_MULT_ASSIGN ||
+        current_token.type == TOK_DIV_ASSIGN)
     {
-
         if (left->type != NODE_IDENT)
         {
             parser_error("Left-hand side of assignment must be a variable");
@@ -2143,13 +2351,53 @@ ASTNode *parse_assignment_expression()
         }
 
         Token assign_tok = current_token;
+        TokenType op_type = current_token.type;
         advance_token();
 
-        ASTNode *right = parse_assignment_expression();
+        // CHANGED: Parse comma expression instead of recursive assignment
+        ASTNode *right = parse_comma_expression();
         if (!right)
         {
             free_ast(left);
             return NULL;
+        }
+
+        // For compound assignments, convert to: var = var op expr
+        if (op_type != TOK_ASSIGN)
+        {
+            Token bin_op_token;
+            bin_op_token.line = assign_tok.line;
+            
+            switch (op_type)
+            {
+                case TOK_PLUS_ASSIGN:
+                    bin_op_token.type = TOK_PLUS;
+                    strcpy(bin_op_token.value, "+");
+                    break;
+                case TOK_MINUS_ASSIGN:
+                    bin_op_token.type = TOK_MINUS;
+                    strcpy(bin_op_token.value, "-");
+                    break;
+                case TOK_MULT_ASSIGN:
+                    bin_op_token.type = TOK_MULT;
+                    strcpy(bin_op_token.value, "*");
+                    break;
+                case TOK_DIV_ASSIGN:
+                    bin_op_token.type = TOK_DIV;
+                    strcpy(bin_op_token.value, "/");
+                    break;
+                default:
+                    break;
+            }
+            
+            ASTNode *left_copy = create_ast_node(NODE_IDENT, left->token, NULL, NULL);
+            ASTNode *bin_op = create_ast_node(NODE_BIN_OP, bin_op_token, left_copy, right);
+            
+            Token simple_assign = assign_tok;
+            simple_assign.type = TOK_ASSIGN;
+            strcpy(simple_assign.value, "=");
+            
+            return create_ast_node(NODE_ASSIGN, simple_assign, left, bin_op);
         }
 
         return create_ast_node(NODE_ASSIGN, assign_tok, left, right);
@@ -2157,6 +2405,38 @@ ASTNode *parse_assignment_expression()
 
     return left;
 }
+
+// <comma_expr> -> <assign_expr> | <assign_expr> TOK_COMMA <comma_expr>
+ASTNode *parse_comma_expression()
+{
+    ASTNode *left = parse_assignment_expression();
+    if (!left)
+        return NULL;
+
+    // Check if we have a comma operator (not a separator)
+    if (current_token.type == TOK_COMMA)
+    {
+        // Look ahead to see if this is a comma operator or separator
+        // In parentheses, comma is an operator
+        // After declarations or in function calls, it's a separator
+        
+        Token comma_tok = current_token;
+        advance_token();
+        
+        ASTNode *right = parse_comma_expression();
+        if (!right)
+        {
+            // If parsing fails, might be end of expression
+            return left;
+        }
+        
+        // Create comma expression node
+        return create_ast_node(NODE_COMMA_EXPR, comma_tok, left, right);
+    }
+
+    return left;
+}
+
 
 // <expr> -> <term> <expr_tail>
 ASTNode *parse_additive_expression()
@@ -2226,7 +2506,7 @@ ASTNode *parse_term_tail(ASTNode *left)
     return left;
 }
 
-// <factor> -> TOK_IDENT | TOK_NUMBER | TOK_CHAR_LITERAL | TOK_LPAREN <expr> TOK_RPAREN
+// <factor> -> TOK_NUMBER | TOK_CHAR_LITERAL | TOK_IDENT | TOK_LPAREN <comma_expr> TOK_RPAREN | TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT | TOK_PLUS <factor> | TOK_MINUS <factor>
 ASTNode *parse_factor()
 {
     if (current_token.type == TOK_NUMBER)
@@ -2241,19 +2521,34 @@ ASTNode *parse_factor()
         advance_token();
         return create_ast_node(NODE_CHAR_LITERAL, t, NULL, NULL);
     }
+    else if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
+    {
+        Token op_token = current_token;
+        advance_token();
+
+        if (current_token.type != TOK_IDENT)
+        {
+            parser_error("Expected identifier after prefix ++ or --");
+            return NULL;
+        }
+
+        ASTNode *id_node = create_ast_node(NODE_IDENT, current_token, NULL, NULL);
+        ASTNode *unary_node = create_ast_node(NODE_UNARY_OP, op_token, id_node, NULL);
+
+        advance_token();
+        return unary_node;
+    }
     else if (current_token.type == TOK_IDENT)
     {
-        Token t = current_token;
-        advance_token();
-        return create_ast_node(NODE_IDENT, t, NULL, NULL);
+        return parse_postfix_expression();
     }
     else if (current_token.type == TOK_LPAREN)
     {
         advance_token();
-        ASTNode *expr = parse_assignment_expression();
+        // CHANGED: Parse comma expression inside parentheses
+        ASTNode *expr = parse_comma_expression();
         if (expr == NULL)
         {
-
             while (current_token.type != TOK_EOF && current_token.type != TOK_RPAREN)
             {
                 advance_token();
@@ -2266,13 +2561,18 @@ ASTNode *parse_factor()
         }
         if (!expect_token(TOK_RPAREN))
         {
-            // Error already recorded, but we return the expression anyway for partial AST
+            // Error already recorded
         }
         return expr;
     }
+    else if (current_token.type == TOK_PLUS)
+    {
+        advance_token();
+        ASTNode *inner = parse_factor();
+        return inner;
+    }
     else if (current_token.type == TOK_MINUS)
     {
-
         Token op = current_token;
         advance_token();
         ASTNode *right = parse_factor();
@@ -2303,6 +2603,34 @@ ASTNode *parse_factor()
     }
 }
 
+// postfix_expression → TOK_IDENT | TOK_IDENT TOK_INCREMENT | TOK_IDENT TOK_DECREMENT
+ASTNode *parse_postfix_expression()
+{
+    if (current_token.type != TOK_IDENT)
+    {
+        parser_error("Expected identifier in postfix expression");
+        return NULL;
+    }
+    
+    Token ident = current_token;
+    advance_token();
+    
+    ASTNode *ident_node = create_ast_node(NODE_IDENT, ident, NULL, NULL);
+    
+    // Check for postfix ++ or --
+    if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
+    {
+        Token op = current_token;
+        advance_token();
+        
+        // Create unary operation node
+        ASTNode *unary_node = create_ast_node(NODE_UNARY_OP, op, ident_node, NULL);
+        return unary_node;
+    }
+    
+    return ident_node;
+}
+// <expression> -> <assign_expr>
 ASTNode *parse_expression()
 {
     return parse_assignment_expression();
@@ -2345,7 +2673,6 @@ int is_identifier_char(char c)
 // Lexer function to get the next token
 Token get_next_token()
 {
-
     // Ignore white spaces
     while (isspace((unsigned char)input[position]))
     {
@@ -2354,10 +2681,9 @@ Token get_next_token()
         position++;
     }
 
-    // Ignore Comments
+    // Ignore Comments and check for /=
     if (input[position] == '/')
     {
-
         if (input[position + 1] == '/')
         {
             position += 2;
@@ -2382,12 +2708,69 @@ Token get_next_token()
             }
             return get_next_token();
         }
+        
+        // Check for /= BEFORE returning single /
+        if (input[position + 1] == '=')
+        {
+            position += 2;
+            return create_token(TOK_DIV_ASSIGN, "/=");
+        }
+        
+        // Single division operator
+        position++;
+        return create_token(TOK_DIV, "/");
     }
 
     // Token for end of file
     if (input[position] == '\0')
     {
         return create_token(TOK_EOF, NULL);
+    }
+
+    // Check for ++ and += before single +
+    if (input[position] == '+')
+    {
+        if (input[position + 1] == '+')
+        {
+            position += 2;
+            return create_token(TOK_INCREMENT, "++");
+        }
+        if (input[position + 1] == '=')
+        {
+            position += 2;
+            return create_token(TOK_PLUS_ASSIGN, "+=");
+        }
+        position++;
+        return create_token(TOK_PLUS, "+");
+    }
+    
+    // Check for -- and -= before single -
+    if (input[position] == '-')
+    {
+        if (input[position + 1] == '-')
+        {
+            position += 2;
+            return create_token(TOK_DECREMENT, "--");
+        }
+        if (input[position + 1] == '=')
+        {
+            position += 2;
+            return create_token(TOK_MINUS_ASSIGN, "-=");
+        }
+        position++;
+        return create_token(TOK_MINUS, "-");
+    }
+
+    // Check for *= before single *
+    if (input[position] == '*')
+    {
+        if (input[position + 1] == '=')
+        {
+            position += 2;
+            return create_token(TOK_MULT_ASSIGN, "*=");
+        }
+        position++;
+        return create_token(TOK_MULT, "*");
     }
 
     // Token for Escape Sequences
@@ -2399,7 +2782,6 @@ Token get_next_token()
 
         if (input[position] == '\\')
         {
-
             char_val[i++] = input[position++];
             if (i < 3)
                 char_val[i++] = input[position++];
@@ -2459,14 +2841,6 @@ Token get_next_token()
     {
     case '=':
         return create_token(TOK_ASSIGN, "=");
-    case '+':
-        return create_token(TOK_PLUS, "+");
-    case '-':
-        return create_token(TOK_MINUS, "-");
-    case '*':
-        return create_token(TOK_MULT, "*");
-    case '/':
-        return create_token(TOK_DIV, "/");
     case ';':
         return create_token(TOK_SEMICOLON, ";");
     case '(':
