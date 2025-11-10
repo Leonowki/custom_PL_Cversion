@@ -2,14 +2,205 @@
 
 .code
 
-daddiu $t0, $zero, 1
+daddiu $t0, $zero, 10
 sd $t0, 0($zero)
+daddiu $t0, $zero, 5
+sd $t0, 8($zero)
+daddiu $t0, $zero, 1
+sd $t0, 16($zero)
+daddiu $t0, $zero, 2
+sd $t0, 24($zero)
+daddiu $t0, $zero, 3
+sd $t0, 32($zero)
+daddiu $t0, $zero, 65
+sd $t0, 40($zero)
+daddiu $t0, $zero, 65
+sd $t0, 48($zero)
+daddiu $t0, $zero, 7
+sd $t0, 72($zero)
+sd $t0, 64($zero)
+sd $t0, 56($zero)
 ld $t0, 0($zero)
+ld $t1, 8($zero)
+daddu $t2, $t0, $t1
+sd $t2, 80($zero)
+ld $t0, 0($zero)
+ld $t1, 8($zero)
+ld $t2, 16($zero)
+daddu $t3, $t1, $t2
+dmult $t0, $t3
+mflo $t1
+sd $t1, 88($zero)
+daddiu $t0, $zero, 1
+daddiu $t1, $zero, 2
+daddu $t2, $t0, $t1
+daddiu $t0, $zero, 3
+dmult $t2, $t0
+mflo $t1
+sd $t1, 96($zero)
+daddiu $t0, $zero, 1
+daddiu $t1, $zero, 2
+daddiu $t2, $zero, 3
+dmult $t1, $t2
+mflo $t3
+daddu $t1, $t0, $t3
+sd $t1, 104($zero)
+daddiu $t0, $zero, 0
+daddiu $t1, $zero, 5
+dsubu $t2, $t0, $t1
+sd $t2, 112($zero)
+daddiu $t0, $zero, 10
+sd $t0, 120($zero)
+daddiu $t0, $zero, 0
 ld $t1, 0($zero)
-daddiu $t1, $t1, 1
-sd $t1, 0($zero)
+ld $t2, 8($zero)
+daddu $t3, $t1, $t2
+dsubu $t1, $t0, $t3
+ld $t0, 16($zero)
+ld $t2, 24($zero)
+dsubu $t3, $t0, $t2
+daddu $t0, $t1, $t3
+sd $t0, 128($zero)
+daddiu $t0, $zero, 0
+daddiu $t1, $zero, 0
+ld $t2, 112($zero)
+dsubu $t3, $t1, $t2
+dsubu $t1, $t0, $t3
+sd $t1, 136($zero)
+daddiu $t0, $zero, 0
+sd $t0, 144($zero)
+ld $t0, 144($zero)
+ld $t0, 144($zero)
+daddiu $t0, $t0, 1
+sd $t0, 144($zero)
+daddiu $t1, $zero, 1
+daddu $t2, $t0, $t1
+sd $t2, 144($zero)
+ld $t0, 144($zero)
+ld $t0, 144($zero)
+daddiu $t0, $t0, 1
+sd $t0, 144($zero)
+sd $t0, 152($zero)
+daddiu $t0, $zero, 1
+sd $t0, 160($zero)
+daddiu $t0, $zero, 1
+daddiu $t1, $zero, 2
+daddu $t2, $t0, $t1
+daddiu $t0, $zero, 3
+daddiu $t1, $zero, 4
+daddu $t3, $t0, $t1
+dmult $t2, $t3
+mflo $t0
 ld $t1, 0($zero)
-ld $t1, 0($zero)
-daddiu $t1, $t1, 1
-sd $t1, 0($zero)
-sd $t1, 8($zero)
+ld $t2, 8($zero)
+ld $t3, 16($zero)
+daddu $t4, $t2, $t3
+dmult $t1, $t4
+mflo $t2
+dsubu $t1, $t0, $t2
+ld $t0, 160($zero)
+ddiv $t1, $t0
+mflo $t2
+sd $t2, 168($zero)
+daddiu $t0, $zero, 1
+daddiu $t1, $zero, 2
+daddu $t2, $t0, $t1
+daddiu $t0, $zero, 3
+dmult $t2, $t0
+mflo $t1
+daddiu $t0, $zero, 4
+dsubu $t2, $t1, $t0
+daddiu $t0, $zero, 1
+ddiv $t2, $t0
+mflo $t1
+daddiu $t0, $zero, 6
+daddu $t2, $t1, $t0
+daddiu $t0, $zero, 7
+dmult $t2, $t0
+mflo $t1
+daddiu $t0, $zero, 8
+dsubu $t2, $t1, $t0
+sd $t2, 176($zero)
+ld $t0, 40($zero)
+daddiu $t1, $zero, 1
+daddu $t2, $t0, $t1
+sd $t2, 184($zero)
+daddiu $t0, $zero, 65
+daddiu $t1, $zero, 5
+daddu $t2, $t0, $t1
+sd $t2, 192($zero)
+daddiu $t0, $zero, 122
+daddiu $t1, $zero, 97
+dsubu $t2, $t0, $t1
+sd $t2, 200($zero)
+daddiu $t0, $zero, 10
+sd $t0, 208($zero)
+daddiu $t0, $zero, 42
+sd $t0, 216($zero)
+daddiu $t0, $zero, 90
+sd $t0, 224($zero)
+daddiu $t0, $zero, 1
+sd $t0, 232($zero)
+daddiu $t0, $zero, 2
+sd $t0, 240($zero)
+daddiu $t0, $zero, 3
+sd $t0, 248($zero)
+daddiu $t0, $zero, 1
+daddiu $t1, $zero, 2
+daddu $t2, $t0, $t1
+daddiu $t0, $zero, 3
+daddu $t1, $t2, $t0
+sd $t1, 256($zero)
+daddiu $t0, $zero, 100
+daddiu $t1, $zero, 10
+ddiv $t0, $t1
+mflo $t2
+daddiu $t0, $zero, 2
+ddiv $t2, $t0
+mflo $t1
+sd $t1, 264($zero)
+daddiu $t0, $zero, 3
+sd $t0, 272($zero)
+daddiu $t0, $zero, 4
+sd $t0, 280($zero)
+daddiu $t0, $zero, 5
+sd $t0, 288($zero)
+ld $t0, 272($zero)
+ld $t0, 272($zero)
+daddiu $t0, $t0, 1
+sd $t0, 272($zero)
+ld $t1, 280($zero)
+daddu $t2, $t0, $t1
+sd $t2, 296($zero)
+ld $t0, 280($zero)
+ld $t0, 280($zero)
+daddiu $t0, $t0, -1
+sd $t0, 280($zero)
+daddiu $t1, $zero, 0
+ld $t2, 288($zero)
+dsubu $t3, $t1, $t2
+dsubu $t1, $t0, $t3
+sd $t1, 304($zero)
+daddiu $t0, $zero, 0
+sd $t0, 312($zero)
+daddiu $t0, $zero, 1
+ld $t0, 312($zero)
+daddiu $t1, $zero, 2
+ld $t1, 312($zero)
+daddiu $t2, $zero, 3
+dmult $t1, $t2
+mflo $t3
+daddu $t1, $t0, $t3
+sd $t1, 312($zero)
+sd $t1, 312($zero)
+sd $t1, 312($zero)
+daddiu $t0, $zero, 5
+sd $t0, 320($zero)
+daddiu $t0, $zero, 2
+sd $t0, 328($zero)
+daddiu $t0, $zero, 3
+sd $t0, 336($zero)
+daddiu $t0, $zero, 4
+sd $t0, 344($zero)
+daddiu $t0, $zero, 5
+sd $t0, 352($zero)

@@ -799,11 +799,7 @@ void check_declaration(ASTNode *node)
         DataType expr_type = get_expression_type(node->right);
         if (expr_type != TYPE_ERROR && expr_type != var_type)
         {
-            if (var_type == TYPE_CHAR && expr_type == TYPE_INT || var_type == TYPE_INT && expr_type == TYPE_CHAR)
-            {
-                // This is allowed in C - char variables can be assigned integer values
-            }
-            else
+            if (!(var_type == TYPE_CHAR && expr_type == TYPE_INT || var_type == TYPE_INT && expr_type == TYPE_CHAR))
             {
                 char error_msg[256];
                 const char *expected_type = (var_type == TYPE_INT) ? "int" : "char";
@@ -860,12 +856,8 @@ void check_assignment(ASTNode *node)
     DataType expr_type = get_expression_type(node->right); // Infer the datatype of the expression of the right node.
     if (expr_type != TYPE_ERROR && expr_type != symbol->type)
     {
-        if ((symbol->type == TYPE_INT && expr_type == TYPE_CHAR) ||
-            (symbol->type == TYPE_CHAR && expr_type == TYPE_INT))
-        {
-            // This is allowed in C
-        }
-        else
+        if (!((symbol->type == TYPE_INT && expr_type == TYPE_CHAR) ||
+              (symbol->type == TYPE_CHAR && expr_type == TYPE_INT)))
         {
             char error_msg[256];
             const char *expected_type = (symbol->type == TYPE_INT) ? "int" : "char";
@@ -910,12 +902,8 @@ void check_expression(ASTNode *node)
 
     if (left_type != TYPE_ERROR && right_type != TYPE_ERROR && left_type != right_type)
     {
-        if ((left_type == TYPE_INT && right_type == TYPE_CHAR) ||
-            (left_type == TYPE_CHAR && right_type == TYPE_INT))
-        {
-            // This is allowed in C - chars are promoted to int in expressions
-        }
-        else
+        if (!((left_type == TYPE_INT && right_type == TYPE_CHAR) ||
+              (left_type == TYPE_CHAR && right_type == TYPE_INT)))
         {
             char error_msg[256];
             const char *left_str = (left_type == TYPE_INT) ? "int" : "char";

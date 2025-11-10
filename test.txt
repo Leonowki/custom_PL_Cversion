@@ -1,3 +1,66 @@
-int a = 1;
-a++;
-int b = ++a;
+/* Simple declarations */
+    int a = 10, i = 5, x = 1, y = 2, z = 3;
+    char ch = 'A', c1 = 65;
+
+    /* Chained assignment */
+    int p, q, r;
+    p = q = r = 7;
+
+    /* Arithmetic and precedence */
+    int sum = a + i;
+    int prod = a * (i + x);
+    int expr1 = (1 + 2) * 3;
+    int expr2 = 1 + 2 * 3;
+
+    /* Unary operations */
+    int neg = -5;
+    int plus = +10;
+    int combined = -(a + i) + +(x - y);
+    int double_neg = -(-neg);
+
+    /* Increment/decrement */
+    int inc_test = 0;
+    inc_test = ++inc_test + 1;
+    int post = inc_test++;
+
+    /* Safe divisor example */
+    int safe_divisor = 1;
+    int complicated = (((1 + 2) * (3 + 4)) - (a * (i + x))) / safe_divisor;
+
+    /* Deep nesting */
+    int deep = (((((((1 + 2) * 3) - 4) / 1) + 6) * 7) - 8);
+
+    /* Mixed char and int arithmetic */
+    int from_char = ch + 1;
+    char ch2 = 'A' + 5;
+    int diff = 'z' - 'a';
+
+    /* Character escape and hex */
+    char newline = '\n';
+    // char hexC = '\x41';
+
+    int spaced = 42;
+    char compact = 'Z';
+
+    /* Multiple declarations */
+    int m = 1, n = 2, o = 3;
+
+    /* Associativity tests */
+    int assoc1 = 1 + 2 + 3;
+    int assoc2 = 100 / 10 / 2;
+
+    /* Tricky operator combos */
+    int u = 3, v = 4, w = 5;
+    int tricky1 = u++ + v;  /* (u++) + v */
+    int tricky2 = v-- - -w; /* (v--) - (-w) */
+    
+
+    /* Comma operator with assignments */
+    int tmp = 0;
+    tmp = (tmp = 1, tmp += 2, tmp * 3);
+
+    /* Inner scope shadowing */
+    int shadow = 5;
+
+    /* More arithmetic stress */
+    int A = 2, B = 3, C = 4, D = 5;
