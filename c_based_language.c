@@ -14,24 +14,23 @@ typedef enum
     TOK_IDENT,        // Token for Identifiers
     TOK_NUMBER,       // Token for Numbers
     TOK_CHAR_LITERAL, // Token for Character Literals ex. 'A'
-    TOK_UNARY_OP,     // Token for Unary Operators '++' and '--'
     TOK_ASSIGN,       // Token for Assignment Operator '='
-    TOK_PLUS_ASSIGN,
-    TOK_MINUS_ASSIGN,
-    TOK_MULT_ASSIGN,
-    TOK_DIV_ASSIGN,
-    TOK_PLUS,      // Token for Addition Operator '+'
-    TOK_MINUS,     // Token for Subtraction Operator '-'
-    TOK_MULT,      // Token for Multiplication Operator '*'
-    TOK_DIV,       // Token for Division Operator '/'
-    TOK_SEMICOLON, // Token for Semicolon ';'
-    TOK_LPAREN,    // Token for Left Parenthesis '('
-    TOK_RPAREN,    // Token for Right Parenthesis ')'
-    TOK_COMMA,     // Token for Comma ','
-    TOK_INCREMENT, // Token for Increment Operator '++'
-    TOK_DECREMENT, // Token for Decrement Operator '--'
-    TOK_EOF,       // Token for End of File
-    TOK_ERROR      // Token for Error/ Unknown Token
+    TOK_PLUS_ASSIGN,  // Token for '+='
+    TOK_MINUS_ASSIGN, // Token for '-='
+    TOK_MULT_ASSIGN,  // Token for '*='
+    TOK_DIV_ASSIGN,   // Token for '/='
+    TOK_PLUS,         // Token for Addition Operator '+'
+    TOK_MINUS,        // Token for Subtraction Operator '-'
+    TOK_MULT,         // Token for Multiplication Operator '*'
+    TOK_DIV,          // Token for Division Operator '/'
+    TOK_SEMICOLON,    // Token for Semicolon ';'
+    TOK_LPAREN,       // Token for Left Parenthesis '('
+    TOK_RPAREN,       // Token for Right Parenthesis ')'
+    TOK_COMMA,        // Token for Comma ','
+    TOK_INCREMENT,    // Token for Increment Operator '++'
+    TOK_DECREMENT,    // Token for Decrement Operator '--'
+    TOK_EOF,          // Token for End of File
+    TOK_ERROR         // Token for Error/ Unknown Token
 } TokenType;
 
 // Enum definition for Token Identifiers Datatype
@@ -290,6 +289,7 @@ ASTNode *parse_term();
 ASTNode *parse_term_tail(ASTNode *left);
 ASTNode *parse_factor();
 ASTNode *parse_postfix_expression();
+
 // Semantic  Analysis Function Prototypes
 void init_symbol_table();
 Symbol *lookup_symbol(const char *name);
@@ -724,12 +724,10 @@ void semantic_analysis(ASTNode *node)
     case NODE_UNARY_OP:
         check_unary_operation(node);
         break;
-    case NODE_COMMA_EXPR: // NEW: Handle comma expressions
-        // Just check both sides, no type checking needed
-        // The result type is the type of the right operand
+    case NODE_COMMA_EXPR:
         semantic_analysis(node->left);
         semantic_analysis(node->right);
-        return; // Don't recurse again below
+        return;
     }
 
     semantic_analysis(node->left);
@@ -969,7 +967,7 @@ DataType get_expression_type(ASTNode *node)
         return get_expression_type(node->left);
     case NODE_ASSIGN:
         return get_expression_type(node->left);
-    case NODE_COMMA_EXPR: // NEW: Comma expression type is the type of rightmost expr
+    case NODE_COMMA_EXPR:
         return get_expression_type(node->right);
     default:
         return TYPE_ERROR;
@@ -1042,10 +1040,10 @@ void print_tac(TACNode *tac)
         case TAC_COPY:
             printf("%s = %s\n", current->result, current->arg1);
             break;
-        case TAC_INC: // New case
+        case TAC_INC:
             printf("%s = %s + %s\n", current->result, current->arg1, current->arg2);
             break;
-        case TAC_DEC: // New case
+        case TAC_DEC:
             printf("%s = %s - %s\n", current->result, current->arg1, current->arg2);
             break;
         default:
@@ -1181,21 +1179,17 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
         return rhs_tac;
     }
 
-    case NODE_COMMA_EXPR: // NEW: Generate TAC for comma expressions
+    case NODE_COMMA_EXPR:
     {
-        // Evaluate left side (for side effects)
         TACNode *left_tac = generate_tac_expr(node->left, tac_tail);
 
-        // Free the temporary from left if it's not used
         if (left_tac && left_tac->result && is_register(left_tac->result))
         {
             free_temp_register(left_tac->result);
         }
 
-        // Evaluate right side (this is the result)
         TACNode *right_tac = generate_tac_expr(node->right, tac_tail);
 
-        // Return the right side result
         return right_tac;
     }
 
@@ -1209,8 +1203,6 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
             char *var_name = node->left->token.value;
             char *temp = get_temp_register();
 
-            // For postfix: load current value first, then modify variable
-            // Create a copy instruction to save old value
             TACNode *load_tac = create_tac_node(TAC_COPY, temp, var_name, NULL);
             if (*tac_tail)
             {
@@ -1219,7 +1211,6 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
             }
             *tac_tail = load_tac;
 
-            // Then perform the increment/decrement
             TACType op_type = (node->token.type == TOK_INCREMENT) ? TAC_INC : TAC_DEC;
             TACNode *op_tac = create_tac_node(op_type, var_name, var_name, "1");
 
@@ -1230,7 +1221,6 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
             }
             *tac_tail = op_tac;
 
-            // Return the load_tac which holds the old value in temp register
             return load_tac;
         }
 
@@ -1318,7 +1308,7 @@ void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
             generate_tac_assign(stmt, tac_tail);
             break;
 
-        case NODE_UNARY_OP: // Add this case
+        case NODE_UNARY_OP:
             generate_tac_expr(stmt, tac_tail);
             break;
 
@@ -1544,35 +1534,28 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 }
                 else
                 {
-                    // Regular character
                     sprintf(imm_str, "%d", (int)current->arg1[0]);
                 }
                 instr = create_mips_instruction(MIPS_DADDIU, current->result, "zero", NULL, NULL, NULL, imm_str);
             }
             else
             {
-                // Numeric literal
                 instr = create_mips_instruction(MIPS_DADDIU, current->result, "zero", NULL, NULL, NULL, current->arg1);
             }
             break;
 
-        case TAC_INC: // Changed from TAC_INC
+        case TAC_INC:
         {
             char offset_str[12];
             sprintf(offset_str, "%d", get_var_memory_address(current->result));
 
-            // Load variable
             char *temp_reg = get_temp_register();
             MIPSInstruction *load = create_mips_instruction(
                 MIPS_LD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
             append_mips_instruction(&head, &tail, load);
-
-            // Add 1
             MIPSInstruction *add = create_mips_instruction(
                 MIPS_DADDIU, temp_reg, temp_reg, NULL, NULL, NULL, "1");
             append_mips_instruction(&head, &tail, add);
-
-            // Store back
             instr = create_mips_instruction(
                 MIPS_SD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
 
@@ -1580,23 +1563,20 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
         }
         break;
 
-        case TAC_DEC: // Changed from TAC_DEC
+        case TAC_DEC:
         {
             char offset_str[12];
             sprintf(offset_str, "%d", get_var_memory_address(current->result));
 
-            // Load variable
             char *temp_reg = get_temp_register();
             MIPSInstruction *load = create_mips_instruction(
                 MIPS_LD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
             append_mips_instruction(&head, &tail, load);
 
-            // Subtract 1
             MIPSInstruction *sub = create_mips_instruction(
                 MIPS_DADDIU, temp_reg, temp_reg, NULL, NULL, NULL, "-1");
             append_mips_instruction(&head, &tail, sub);
 
-            // Store back
             instr = create_mips_instruction(
                 MIPS_SD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
 
@@ -1631,7 +1611,7 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                     NULL);
             }
         }
-        break; // Removed duplicate break
+        break;
 
         case TAC_ADD:
         {
@@ -1640,7 +1620,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1652,7 +1631,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1664,10 +1642,8 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform addition: result = arg1 + arg2
             instr = create_mips_instruction(MIPS_DADDU, reg2, reg1, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1682,7 +1658,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1694,7 +1669,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1706,10 +1680,8 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform subtraction: result = arg1 - arg2
             instr = create_mips_instruction(MIPS_DSUBU, reg2, reg1, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1724,7 +1696,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1736,7 +1707,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1748,12 +1718,10 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform multiplication
             MIPSInstruction *mult = create_mips_instruction(MIPS_DMULT, reg2, reg1, NULL, NULL, NULL, NULL);
             append_mips_instruction(&head, &tail, mult);
             instr = create_mips_instruction(MIPS_MFLO, NULL, NULL, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1768,7 +1736,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1780,7 +1747,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1792,12 +1758,10 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform division
             MIPSInstruction *div = create_mips_instruction(MIPS_DDIV, reg2, reg1, NULL, NULL, NULL, NULL);
             append_mips_instruction(&head, &tail, div);
             instr = create_mips_instruction(MIPS_MFLO, NULL, NULL, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1990,7 +1954,7 @@ void write_machine_code_to_file(MIPSInstruction *head, const char *filename_bina
     while (curr)
     {
         char *binary_rep = malloc(33);
-        // Basic formatting depending on instruction type
+
         switch (curr->type)
         {
         case MIPS_DADDU:
@@ -2145,10 +2109,10 @@ int expect_token(TokenType expected)
         : (expected == TOK_NUMBER)       ? "TOK_NUMBER"
         : (expected == TOK_CHAR_LITERAL) ? "TOK_CHAR_LITERAL"
         : (expected == TOK_ASSIGN)       ? "TOK_ASSIGN"
-        : (expected == TOK_PLUS_ASSIGN)  ? "TOK_PLUS_ASSIGN"  // New
-        : (expected == TOK_MINUS_ASSIGN) ? "TOK_MINUS_ASSIGN" // New
-        : (expected == TOK_MULT_ASSIGN)  ? "TOK_MULT_ASSIGN"  // New
-        : (expected == TOK_DIV_ASSIGN)   ? "TOK_DIV_ASSIGN"   // New
+        : (expected == TOK_PLUS_ASSIGN)  ? "TOK_PLUS_ASSIGN"
+        : (expected == TOK_MINUS_ASSIGN) ? "TOK_MINUS_ASSIGN"
+        : (expected == TOK_MULT_ASSIGN)  ? "TOK_MULT_ASSIGN"
+        : (expected == TOK_DIV_ASSIGN)   ? "TOK_DIV_ASSIGN"
         : (expected == TOK_PLUS)         ? "TOK_PLUS"
         : (expected == TOK_MINUS)        ? "TOK_MINUS"
         : (expected == TOK_MULT)         ? "TOK_MULT"
@@ -2157,8 +2121,8 @@ int expect_token(TokenType expected)
         : (expected == TOK_LPAREN)       ? "TOK_LPAREN"
         : (expected == TOK_RPAREN)       ? "TOK_RPAREN"
         : (expected == TOK_COMMA)        ? "TOK_COMMA"
-        : (expected == TOK_INCREMENT)    ? "TOK_INCREMENT" // New
-        : (expected == TOK_DECREMENT)    ? "TOK_DECREMENT" // New
+        : (expected == TOK_INCREMENT)    ? "TOK_INCREMENT"
+        : (expected == TOK_DECREMENT)    ? "TOK_DECREMENT"
         : (expected == TOK_EOF)          ? "TOK_EOF"
                                          : "TOK_ERROR";
 
@@ -2178,8 +2142,8 @@ int expect_token(TokenType expected)
              : (current_token.type == TOK_LPAREN)       ? "TOK_LPAREN"
              : (current_token.type == TOK_RPAREN)       ? "TOK_RPAREN"
              : (current_token.type == TOK_COMMA)        ? "TOK_COMMA"
-             : (current_token.type == TOK_INCREMENT)    ? "TOK_INCREMENT" // New
-             : (current_token.type == TOK_DECREMENT)    ? "TOK_DECREMENT" // New
+             : (current_token.type == TOK_INCREMENT)    ? "TOK_INCREMENT"
+             : (current_token.type == TOK_DECREMENT)    ? "TOK_DECREMENT"
              : (current_token.type == TOK_EOF)          ? "TOK_EOF"
                                                         : "TOK_ERROR");
 
@@ -2342,7 +2306,7 @@ ASTNode *parse_stmt()
     }
     else if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
     {
-        ASTNode *unary_stmt = parse_factor(); // reuse parse_factor for ++x / --x
+        ASTNode *unary_stmt = parse_factor();
         if (current_token.type == TOK_SEMICOLON)
             advance_token();
         else
@@ -2382,7 +2346,6 @@ ASTNode *parse_stmt()
 // <init_list> -> <init> | <init> TOK_COMMA <init_list>
 ASTNode *parse_init_list(Token type_token)
 {
-    // Parse first init
     ASTNode *first_decl = parse_init(type_token);
     if (first_decl == NULL)
     {
@@ -2457,7 +2420,6 @@ ASTNode *parse_init(Token type_token)
     if (current_token.type == TOK_ASSIGN)
     {
         advance_token();
-        // This prevents: int a = 1, 2; which is invalid
         ASTNode *expr = parse_assignment_expression();
         if (expr != NULL)
         {
@@ -2499,7 +2461,6 @@ ASTNode *parse_assignment_expression()
         TokenType op_type = current_token.type;
         advance_token();
 
-        // CHANGED: Parse comma expression instead of recursive assignment
         ASTNode *right = parse_comma_expression();
         if (!right)
         {
@@ -2507,7 +2468,6 @@ ASTNode *parse_assignment_expression()
             return NULL;
         }
 
-        // For compound assignments, convert to: var = var op expr
         if (op_type != TOK_ASSIGN)
         {
             Token bin_op_token;
@@ -2558,24 +2518,18 @@ ASTNode *parse_comma_expression()
     if (!left)
         return NULL;
 
-    // Check if we have a comma operator (not a separator)
     if (current_token.type == TOK_COMMA)
     {
-        // Look ahead to see if this is a comma operator or separator
-        // In parentheses, comma is an operator
-        // After declarations or in function calls, it's a separator
-
         Token comma_tok = current_token;
         advance_token();
 
         ASTNode *right = parse_comma_expression();
         if (!right)
         {
-            // If parsing fails, might be end of expression
+
             return left;
         }
 
-        // Create comma expression node
         return create_ast_node(NODE_COMMA_EXPR, comma_tok, left, right);
     }
 
@@ -2689,7 +2643,7 @@ ASTNode *parse_factor()
     else if (current_token.type == TOK_LPAREN)
     {
         advance_token();
-        // CHANGED: Parse comma expression inside parentheses
+
         ASTNode *expr = parse_comma_expression();
         if (expr == NULL)
         {
@@ -2761,13 +2715,12 @@ ASTNode *parse_postfix_expression()
 
     ASTNode *ident_node = create_ast_node(NODE_IDENT, ident, NULL, NULL);
 
-    // Check for postfix ++ or --
+
     if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
     {
         Token op = current_token;
         advance_token();
 
-        // Create unary operation node
         ASTNode *unary_node = create_ast_node(NODE_UNARY_OP, op, ident_node, NULL);
         return unary_node;
     }
