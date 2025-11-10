@@ -1624,61 +1624,29 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             else
             {
                 sprintf(offset_str, "%d", get_var_memory_address(current->arg1));
-                // FIX: Check if result is a register, if not allocate one
-                char *target_reg;
-                bool need_store = false;
-                
-                if (is_register(current->result))
-                {
-                    target_reg = current->result;
-                }
-                else
-                {
-                    target_reg = get_temp_register();
-                    need_store = true;
-                }
-                
                 instr = create_mips_instruction(
                     MIPS_LD,
-                    target_reg,
+                    current->result,
                     NULL, NULL,
                     "zero",
                     offset_str,
                     NULL);
-                
-                append_mips_instruction(&head, &tail, instr);
-                
-                // If we needed a temp register, store it to the variable
-                if (need_store)
-                {
-                    char dest_offset[12];
-                    sprintf(dest_offset, "%d", get_var_memory_address(current->result));
-                    instr = create_mips_instruction(
-                        MIPS_SD,
-                        target_reg,
-                        NULL, NULL,
-                        "zero",
-                        dest_offset,
-                        NULL);
-                    free_temp_register(target_reg);
-                }
-                else
-                {
-                    continue; // Skip the append below since we already appended
-                }
             }
         }
         break;  // Removed duplicate break
 
-        case TAC_ADD:
+                case TAC_ADD:
         {
             char *reg1 = current->arg1;
             char *reg2 = current->arg2;
+            bool free_reg1 = false;
+            bool free_reg2 = false;
             
             // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
+                free_reg1 = true;
                 char offset_str[12];
                 sprintf(offset_str, "%d", get_var_memory_address(current->arg1));
                 MIPSInstruction *load1 = create_mips_instruction(
@@ -1690,6 +1658,7 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
+                free_reg2 = true;
                 char offset_str[12];
                 sprintf(offset_str, "%d", get_var_memory_address(current->arg2));
                 MIPSInstruction *load2 = create_mips_instruction(
@@ -1697,13 +1666,13 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
             
-            // Perform addition
+            // Perform addition: result = arg1 + arg2
             instr = create_mips_instruction(MIPS_DADDU, reg2, reg1, current->result, NULL, NULL, NULL);
             
             // Free temporary registers if they were allocated
-            if (!is_register(current->arg1))
+            if (free_reg1)
                 free_temp_register(reg1);
-            if (!is_register(current->arg2))
+            if (free_reg2)
                 free_temp_register(reg2);
         }
         break;
@@ -1712,11 +1681,14 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
         {
             char *reg1 = current->arg1;
             char *reg2 = current->arg2;
+            bool free_reg1 = false;
+            bool free_reg2 = false;
             
             // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
+                free_reg1 = true;
                 char offset_str[12];
                 sprintf(offset_str, "%d", get_var_memory_address(current->arg1));
                 MIPSInstruction *load1 = create_mips_instruction(
@@ -1728,6 +1700,7 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
+                free_reg2 = true;
                 char offset_str[12];
                 sprintf(offset_str, "%d", get_var_memory_address(current->arg2));
                 MIPSInstruction *load2 = create_mips_instruction(
@@ -1735,30 +1708,102 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
             
-            // Perform subtraction
+            // Perform subtraction: result = arg1 - arg2
             instr = create_mips_instruction(MIPS_DSUBU, reg2, reg1, current->result, NULL, NULL, NULL);
             
             // Free temporary registers if they were allocated
-            if (!is_register(current->arg1))
+            if (free_reg1)
                 free_temp_register(reg1);
-            if (!is_register(current->arg2))
+            if (free_reg2)
                 free_temp_register(reg2);
         }
         break;
 
         case TAC_MUL:
         {
-            MIPSInstruction *mult = create_mips_instruction(MIPS_DMULT, current->arg2, current->arg1, NULL, NULL, NULL, NULL);
+            char *reg1 = current->arg1;
+            char *reg2 = current->arg2;
+            bool free_reg1 = false;
+            bool free_reg2 = false;
+            
+            // Load arg1 if it's a variable
+            if (!is_register(current->arg1))
+            {
+                reg1 = get_temp_register();
+                free_reg1 = true;
+                char offset_str[12];
+                sprintf(offset_str, "%d", get_var_memory_address(current->arg1));
+                MIPSInstruction *load1 = create_mips_instruction(
+                    MIPS_LD, reg1, NULL, NULL, "zero", offset_str, NULL);
+                append_mips_instruction(&head, &tail, load1);
+            }
+            
+            // Load arg2 if it's a variable
+            if (!is_register(current->arg2))
+            {
+                reg2 = get_temp_register();
+                free_reg2 = true;
+                char offset_str[12];
+                sprintf(offset_str, "%d", get_var_memory_address(current->arg2));
+                MIPSInstruction *load2 = create_mips_instruction(
+                    MIPS_LD, reg2, NULL, NULL, "zero", offset_str, NULL);
+                append_mips_instruction(&head, &tail, load2);
+            }
+            
+            // Perform multiplication
+            MIPSInstruction *mult = create_mips_instruction(MIPS_DMULT, reg2, reg1, NULL, NULL, NULL, NULL);
             append_mips_instruction(&head, &tail, mult);
             instr = create_mips_instruction(MIPS_MFLO, NULL, NULL, current->result, NULL, NULL, NULL);
+            
+            // Free temporary registers if they were allocated
+            if (free_reg1)
+                free_temp_register(reg1);
+            if (free_reg2)
+                free_temp_register(reg2);
         }
         break;
 
         case TAC_DIV:
         {
-            MIPSInstruction *div = create_mips_instruction(MIPS_DDIV, current->arg2, current->arg1, NULL, NULL, NULL, NULL);
+            char *reg1 = current->arg1;
+            char *reg2 = current->arg2;
+            bool free_reg1 = false;
+            bool free_reg2 = false;
+            
+            // Load arg1 if it's a variable
+            if (!is_register(current->arg1))
+            {
+                reg1 = get_temp_register();
+                free_reg1 = true;
+                char offset_str[12];
+                sprintf(offset_str, "%d", get_var_memory_address(current->arg1));
+                MIPSInstruction *load1 = create_mips_instruction(
+                    MIPS_LD, reg1, NULL, NULL, "zero", offset_str, NULL);
+                append_mips_instruction(&head, &tail, load1);
+            }
+            
+            // Load arg2 if it's a variable
+            if (!is_register(current->arg2))
+            {
+                reg2 = get_temp_register();
+                free_reg2 = true;
+                char offset_str[12];
+                sprintf(offset_str, "%d", get_var_memory_address(current->arg2));
+                MIPSInstruction *load2 = create_mips_instruction(
+                    MIPS_LD, reg2, NULL, NULL, "zero", offset_str, NULL);
+                append_mips_instruction(&head, &tail, load2);
+            }
+            
+            // Perform division
+            MIPSInstruction *div = create_mips_instruction(MIPS_DDIV, reg2, reg1, NULL, NULL, NULL, NULL);
             append_mips_instruction(&head, &tail, div);
             instr = create_mips_instruction(MIPS_MFLO, NULL, NULL, current->result, NULL, NULL, NULL);
+            
+            // Free temporary registers if they were allocated
+            if (free_reg1)
+                free_temp_register(reg1);
+            if (free_reg2)
+                free_temp_register(reg2);
         }
         break;
 

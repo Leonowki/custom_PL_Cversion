@@ -1,6 +1,6 @@
 /* Increment/decrement */
-int inc_test = 0;
-inc_test = ++inc_test + 1;
-int post = inc_test++;
+int a = 1;
+int b = ++a + a++;
 
-    
+int c = 0;
+c += 1;
