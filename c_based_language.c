@@ -6,97 +6,84 @@
 
 /* ----------------- Typedefinitions for Enums ----------------- */
 
-// Enum definition for Token Types
 typedef enum
 {
-    TOK_INT,          // Token for integers data type "int""
-    TOK_CHAR,         // Token for characters data type "char""
-    TOK_IDENT,        // Token for Identifiers
-    TOK_NUMBER,       // Token for Numbers
-    TOK_CHAR_LITERAL, // Token for Character Literals ex. 'A'
-    TOK_UNARY_OP,     // Token for Unary Operators '++' and '--'
-    TOK_ASSIGN,       // Token for Assignment Operator '='
+    TOK_INT,
+    TOK_CHAR,
+    TOK_IDENT,
+    TOK_NUMBER,
+    TOK_CHAR_LITERAL,
+    TOK_UNARY_OP,
+    TOK_ASSIGN,
     TOK_PLUS_ASSIGN,
     TOK_MINUS_ASSIGN,
     TOK_MULT_ASSIGN,
     TOK_DIV_ASSIGN,
-    TOK_PLUS,      // Token for Addition Operator '+'
-    TOK_MINUS,     // Token for Subtraction Operator '-'
-    TOK_MULT,      // Token for Multiplication Operator '*'
-    TOK_DIV,       // Token for Division Operator '/'
-    TOK_SEMICOLON, // Token for Semicolon ';'
-    TOK_LPAREN,    // Token for Left Parenthesis '('
-    TOK_RPAREN,    // Token for Right Parenthesis ')'
-    TOK_COMMA,     // Token for Comma ','
-    TOK_INCREMENT, // Token for Increment Operator '++'
-    TOK_DECREMENT, // Token for Decrement Operator '--'
-    TOK_EOF,       // Token for End of File
-    TOK_ERROR      // Token for Error/ Unknown Token
+    TOK_PLUS,
+    TOK_MINUS,
+    TOK_MULT,
+    TOK_DIV,
+    TOK_SEMICOLON,
+    TOK_LPAREN,
+    TOK_RPAREN,
+    TOK_COMMA,
+    TOK_INCREMENT,
+    TOK_DECREMENT,
+    TOK_EOF,
+    TOK_ERROR
 } TokenType;
 
-// Enum definition for Token Identifiers Datatype
 typedef enum
 {
-    TYPE_INT,    // Integer Data Type
-    TYPE_CHAR,   // Character Data Type
-    TYPE_ERROR,  // Error Data Type
-    TYPE_UNKNOWN // Unknown Data Type
+    TYPE_INT,
+    TYPE_CHAR,
+    TYPE_ERROR,
+    TYPE_UNKNOWN
 } DataType;
 
-// Enum definition for AST Node Types
 typedef enum
 {
-    NODE_VAR_DECL,       // Node for Variable Declaration
-    NODE_ASSIGN,         // Node for Assignment Operation
-    NODE_BIN_OP,         // Node for Binary Operations
-    NODE_NUMBER,         // NOde for Numbers
-    NODE_IDENT,          // Node for Identifiers
-    NODE_PROGRAM,        // Node for Program Root
-    NODE_STATEMENT_LIST, // Node for Statement List
-    NODE_DECL_LIST,      // Node for Declaration List
-    NODE_CHAR_LITERAL,   // Node for Character Literals
-    NODE_UNARY_OP,       // Node for Unary Operations
-    NODE_COMMA_EXPR      // Node for Comma Expressions
+    NODE_VAR_DECL,
+    NODE_ASSIGN,
+    NODE_BIN_OP,
+    NODE_NUMBER,
+    NODE_IDENT,
+    NODE_PROGRAM,
+    NODE_STATEMENT_LIST,
+    NODE_DECL_LIST,
+    NODE_CHAR_LITERAL,
+    NODE_UNARY_OP,
+    NODE_COMMA_EXPR
 } NodeType;
 
-// Enum definition for Three Address Code (TAC) Types
 typedef enum
 {
-    TAC_ASSIGN, // TAC for Assignment Operation
-    TAC_ADD,    // TAC for Addition Operation
-    TAC_SUB,    // TAC for Subtraction Operation
-    TAC_MUL,    // TAC for Multiplication Operation
-    TAC_DIV,    // TAC for Division Operation
-    TAC_COPY,   // TAC for Copy Operation
-    TAC_INC,    // TAC for Increment Operation
-    TAC_DEC,    // TAC for Decrement Operation
+    TAC_ASSIGN,
+    TAC_ADD,
+    TAC_SUB,
+    TAC_MUL,
+    TAC_DIV,
+    TAC_COPY,
+    TAC_INC,
+    TAC_DEC,
 } TACType;
 
-// Enum definition for MIPS Instruction Types
 typedef enum
 {
-    MIPS_DADDIU, // Enumeration for MIPS DADDIU Instruction
-    MIPS_DADDU,  // Enumeration for MIPS DADDU Instruction
-    MIPS_DSUBU,  // Enumeration for MIPS DSUBU Instruction
-    MIPS_DMULT,  // Enumeration for MIPS DMULT Instruction
-    MIPS_DDIV,   // Enumeration for MIPS DDIV Instruction
-    MIPS_MFLO,   // Enumeration for MIPS MFLO Instruction
-    MIPS_SD,     // Enumeration for MIPS SD Instruction
-    MIPS_SB,     // Enumeration for MIPS SB Instruction
-    MIPS_LD,     // Enumeration for MIPS LD Instruction
-    MIPS_LB,     // Enumeration for MIPS LB Instruction
+    MIPS_DADDIU,
+    MIPS_DADDU,
+    MIPS_DSUBU,
+    MIPS_DMULT,
+    MIPS_DDIV,
+    MIPS_MFLO,
+    MIPS_SD,
+    MIPS_SB,
+    MIPS_LD,
+    MIPS_LB,
 } MIPSInstructionType;
 
 /* ----------------- Struct Definitions ----------------- */
 
-/*
- Token:
- Represents a lexical token produced by the lexer.
- Fields:
-   - type: the kind of token (keyword, identifier, number, etc.)
-   - value: the string value of the token (e.g., variable name, literal)
-   - line: the line number in the source code where the token was found, used for error reporting
-*/
 typedef struct
 {
     TokenType type;
@@ -104,15 +91,6 @@ typedef struct
     int line;
 } Token;
 
-/**
- * Symbol structure definition
- * Represents a variable in the symbol table.
- *   name           - variable name (string)
- *   type           - variable data type (DataType enum)
- *   declared       - flag indicating if declared (1 = yes)
- *   memory_offset  - offset in memory for code generation
- *   next           - pointer to next symbol in the table (linked list)
- */
 typedef struct Symbol
 {
     char *name;
@@ -123,15 +101,6 @@ typedef struct Symbol
     struct Symbol *next;
 } Symbol;
 
-/**
- * ASTNode structure definition
- * Represents a node in the Abstract Syntax Tree (AST).
- *   type       - the kind of AST node (NodeType enum)
- *   token      - the token associated with this node (for identifiers, literals, operators, etc.)
- *   data_type  - the semantic type of the node (int, char, etc.), used for type checking
- *   left       - pointer to the left child node (used for binary operations, declarations, etc.)
- *   right      - pointer to the right child node (used for binary operations, lists, etc.)
- */
 typedef struct ASTNode
 {
     NodeType type;
@@ -141,13 +110,6 @@ typedef struct ASTNode
     struct ASTNode *right;
 } ASTNode;
 
-/**
- * ErrorInfo structure definition
- * Represents an error encountered during semantic analysis.
- *  line       - the line number where the error occurred
- *  message    - descriptive error message
- *  next       - pointer to the next error in the linked list
- */
 typedef struct ErrorInfo
 {
     int line;
@@ -155,16 +117,6 @@ typedef struct ErrorInfo
     struct ErrorInfo *next;
 } ErrorInfo;
 
-/**
- * TACNode structure definition
- * Represents a Three Address Code (TAC) instruction.
- * type       - the kind of TAC instruction (TACType enum)
- * result     - the result variable/register of the instruction
- * arg1       - the first argument variable/register of the instruction
- * arg2       - the second argument variable/register of the instruction
- * prev       - pointer to the previous TAC instruction in the linked list
- * next       - pointer to the next TAC instruction in the linked list
- */
 typedef struct TACNode
 {
     TACType type;
@@ -175,19 +127,6 @@ typedef struct TACNode
     struct TACNode *next;
 } TACNode;
 
-/**
- * MIPSInstruction structure definition
- * Represents a MIPS assembly instruction.
- * type       - the kind of MIPS instruction (MIPSInstructionType enum)
- * rt         - target register
- * rs         - source register
- * rd         - destination register
- * base       - base register for memory operations
- * offset     - offset for memory operations
- * immediate  - immediate value for instructions that use it
- * prev       - pointer to the previous instruction in the linked list
- * next       - pointer to the next instruction in the linked list
- */
 typedef struct MIPSInstruction
 {
     MIPSInstructionType type;
@@ -203,20 +142,20 @@ typedef struct MIPSInstruction
 
 /* ----------------- Program Configuration and Global Vars ----------------- */
 
-bool DEBUG_MODE = true;                                                                  // Set to true to enable debug output
-char *input;                                                                             // Input source code string
-int position = 0;                                                                        // Current position in input string
-int current_line = 1;                                                                    // Current line number for error reporting
-Symbol *symbol_table = NULL;                                                             // Head of the symbol table linked list
-int semantic_errors = 0;                                                                 // Count of semantic errors found
-Token current_token;                                                                     // Current token being processed by the lexer
-int current_memory_offset = 0;                                                           // Global memory offset counter (MIPS64 alignment: 8 bytes)
-int temp_registers_used[10] = {0};                                                       // Track which t0-t9 are in use
-char *temp_reg_names[10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"}; // Temp register names
-int temp_counter = 0;                                                                    // For tracking usage, not for naming
-ErrorInfo *error_list = NULL;                                                            // Head of the error linked list
-int error_count = 0;                                                                     // Count of errors recorded
-MIPSInstruction *assembly_code = NULL;                                                   // Head of the MIPS assembly instruction linked list
+bool DEBUG_MODE = true;
+char *input;
+int position = 0;
+int current_line = 1;
+Symbol *symbol_table = NULL;
+int semantic_errors = 0;
+Token current_token;
+int current_memory_offset = 0;
+int temp_registers_used[10] = {0};
+char *temp_reg_names[10] = {"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9"};
+int temp_counter = 0;
+ErrorInfo *error_list = NULL;
+int error_count = 0;
+MIPSInstruction *assembly_code = NULL;
 
 /* ----------------- Function Prototypes ----------------- */
 
@@ -224,14 +163,12 @@ char *read_file(char *filename);
 
 void process_file(char *filename);
 
-// Lexter Function Prototypes
 void init_lexer(const char *input_str);
 Token get_next_token();
 void advance_token();
 Token create_token(TokenType type, const char *value);
 int is_identifier_char(char c);
 
-// Parser Function Prototypes
 int expect_token(TokenType expected);
 void parser_error(const char *message);
 ASTNode *create_ast_node(NodeType type, Token token, ASTNode *left, ASTNode *right);
@@ -290,7 +227,7 @@ ASTNode *parse_term();
 ASTNode *parse_term_tail(ASTNode *left);
 ASTNode *parse_factor();
 ASTNode *parse_postfix_expression();
-// Semantic  Analysis Function Prototypes
+
 void init_symbol_table();
 Symbol *lookup_symbol(const char *name);
 Symbol *insert_symbol(const char *name, DataType type, int line);
@@ -305,11 +242,9 @@ void check_expression(ASTNode *node);
 DataType get_expression_type(ASTNode *node);
 void check_unary_operation(ASTNode *node);
 
-// Parse and Semantic Error Handling Function Prototypes
 void print_errors();
 void clear_errors();
 
-// TAC Generation Function Prototypes
 TACNode *generate_tac(ASTNode *ast);
 TACNode *create_tac_node(TACType type, const char *result, const char *arg1, const char *arg2);
 void print_tac(TACNode *tac);
@@ -349,33 +284,25 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-/**
- * record_error:
- * Records an error message with the associated line number.
- * Parameters:
- * - line: the line number where the error occurred
- * - message: the descriptive error message
- * Returns: void
- */
 void record_error(int line, const char *message)
 {
-    ErrorInfo *new_error = malloc(sizeof(ErrorInfo)); // Allocate memory for new error
-    if (!new_error)                                   // Check for allocation failure
+    ErrorInfo *new_error = malloc(sizeof(ErrorInfo));
+    if (!new_error)
     {
         fprintf(stderr, "Error: Failed to allocate memory for error info\n");
         return;
     }
 
-    new_error->line = line;                                               // Set line number
-    strncpy(new_error->message, message, sizeof(new_error->message) - 1); // Copy error message
-    new_error->message[sizeof(new_error->message) - 1] = '\0';            // Ensure null-termination
-    new_error->next = NULL;                                               // Initialize next pointer
+    new_error->line = line;
+    strncpy(new_error->message, message, sizeof(new_error->message) - 1);
+    new_error->message[sizeof(new_error->message) - 1] = '\0';
+    new_error->next = NULL;
 
-    if (error_list == NULL) // If error list is empty, set new error as head
+    if (error_list == NULL)
     {
         error_list = new_error;
     }
-    else // Otherwise, append to the end of the list
+    else
     {
         ErrorInfo *current = error_list;
         while (current->next != NULL)
@@ -388,11 +315,6 @@ void record_error(int line, const char *message)
     error_count++;
 }
 
-/**
- * print_errors:
- * Prints all recorded errors to the standard output.
- * Returns: void
- */
 void print_errors()
 {
     if (error_count == 0)
@@ -410,11 +332,6 @@ void print_errors()
     }
 }
 
-/**
- * clear_errors:
- * Frees all recorded errors from memory.
- * Returns: void
- */
 void clear_errors()
 {
     ErrorInfo *current = error_list;
@@ -428,150 +345,91 @@ void clear_errors()
     error_count = 0;
 }
 
-/**
- * get_temp_register:
- * Allocates and returns a temporary register name (t0-t9) for TAC generation.
- * Returns:
- * - a pointer to the temporary register name string
- */
 char *get_temp_register()
 {
     for (int i = 0; i < 10; i++)
     {
-        if (!temp_registers_used[i]) // Find an unused register
+        if (!temp_registers_used[i])
         {
-            temp_registers_used[i] = 1; // Mark it as used
-            temp_counter++;             // Increment usage counter
-            return temp_reg_names[i];   // Return the register name
+            temp_registers_used[i] = 1;
+            temp_counter++;
+            return temp_reg_names[i];
         }
     }
-    temp_registers_used[0] = 1; // If all are used, reuse t0
-    temp_counter++;             // Track usage
-    return temp_reg_names[0];   // Return t0
+    temp_registers_used[0] = 1;
+    temp_counter++;
+    return temp_reg_names[0];
 }
 
-/**
- * free_temp_register:
- * Frees a previously allocated temporary register.
- * Parameters:
- * - reg_name: the name of the register to free
- * Returns: void
- */
 void free_temp_register(char *reg_name)
 {
     for (int i = 0; i < 10; i++)
     {
-        if (strcmp(temp_reg_names[i], reg_name) == 0) // Find the register
+        if (strcmp(temp_reg_names[i], reg_name) == 0)
         {
-            temp_registers_used[i] = 0; // Mark it as free
+            temp_registers_used[i] = 0;
             break;
         }
     }
 }
 
-/**
- * reset_temp_registers:
- * Resets all temporary registers to unused state.
- * Returns: void
- */
 void reset_temp_registers()
 {
-    for (int i = 0; i < 10; i++) // Loop over the registers and free all
+    for (int i = 0; i < 10; i++)
     {
         temp_registers_used[i] = 0;
     }
     temp_counter = 0;
 }
 
-/**
- * init_symbol_table:
- * Initializes the symbol table by freeing any existing entries and resetting counters.
- * Returns: void
- */
 void init_symbol_table()
 {
-    free_symbol_table();       // Clear existing table
-    symbol_table = NULL;       // Reset head pointer
-    current_memory_offset = 0; // Reset memory offset
-    semantic_errors = 0;       // Reset semantic error count
+    free_symbol_table();
+    symbol_table = NULL;
+    current_memory_offset = 0;
+    semantic_errors = 0;
 }
 
-/**
- * get_type_size:
- * Returns the size in bytes of the given data type.
- * Parameters:
- * - type: the data type (DataType enum)
- * Returns:
- * - size in bytes of the data type
- */
 int get_type_size(DataType type)
 {
-    switch (type) // Return size based on data type
+    switch (type)
     {
-    case TYPE_INT: // Lets assume int is 4 bytes for MIPS64
+    case TYPE_INT:
         return 4;
-    case TYPE_CHAR: // Char is 1 byte
+    case TYPE_CHAR:
         return 1;
     default:
-        return 8; // Let's default to 8 bytes for unknown types
+        return 8;
     }
 }
 
-/**
- * get_type_from_token:
- * Returns the DataType corresponding to a given token.
- * Parameters:
- * - token: the token to evaluate
- * Returns:
- * - the corresponding DataType enum value
- */
 DataType get_type_from_token(Token token)
 {
-    if (token.type == TOK_INT) // Map TOK_INT to TYPE_INT
+    if (token.type == TOK_INT)
         return TYPE_INT;
-    if (token.type == TOK_CHAR) // Map TOK_CHAR to TYPE_CHAR
+    if (token.type == TOK_CHAR)
         return TYPE_CHAR;
-    return TYPE_UNKNOWN; // Default to TYPE_UNKNOWN for other tokens
+    return TYPE_UNKNOWN;
 }
 
-/**
- * lookup_symbol:
- * Looks up a symbol by name in the symbol table.
- * Parameters:
- * - name: the name of the symbol to look up
- * Returns:
- * - pointer to the Symbol if found, NULL otherwise
- */
 Symbol *lookup_symbol(const char *name)
 {
-    Symbol *current = symbol_table; // Start at the head of the symbol table
-    while (current != NULL)         // Traverse the linked list
+    Symbol *current = symbol_table;
+    while (current != NULL)
     {
-        if (strcmp(current->name, name) == 0) // Check for matching name
+        if (strcmp(current->name, name) == 0)
         {
-            return current; // If found return the found symbol
+            return current;
         }
-        current = current->next; // Else move to the next symbol
+        current = current->next;
     }
-    return NULL; // Not found, return NULL
+    return NULL;
 }
 
-/**
- * insert_symbol:
- * Inserts a new symbol into the symbol table.
- * Parameters:
- * - name: the name of the symbol
- * - type: the data type of the symbol
- * - line: the line number where the symbol is declared
- * Returns:
- * - pointer to the newly inserted Symbol, or existing Symbol if redeclared
- * on redeclaration
- *
- */
 Symbol *insert_symbol(const char *name, DataType type, int line)
 {
-    Symbol *existing = lookup_symbol(name); // Check for existing symbol
-    if (existing != NULL)                   // If the identifier is existing in the symbol table and is redeclared then send error
+    Symbol *existing = lookup_symbol(name);
+    if (existing != NULL)
     {
         char error_msg[256];
         snprintf(error_msg, sizeof(error_msg),
@@ -582,7 +440,7 @@ Symbol *insert_symbol(const char *name, DataType type, int line)
         return existing;
     }
 
-    Symbol *new_symbol = malloc(sizeof(Symbol)); // Create new symbol entry if identifier does not exist in the symbo table
+    Symbol *new_symbol = malloc(sizeof(Symbol));
     if (!new_symbol)
     {
         fprintf(stderr, "Error: Failed to allocate memory for symbol\n");
@@ -603,7 +461,7 @@ Symbol *insert_symbol(const char *name, DataType type, int line)
 
     int type_size = get_type_size(type);
 
-    if (current_memory_offset % 8 != 0) // Memory Offset is 8 bytes based on MIPS64 memory offsets
+    if (current_memory_offset % 8 != 0)
     {
         current_memory_offset += 8 - (current_memory_offset % 8);
     }
@@ -616,12 +474,6 @@ Symbol *insert_symbol(const char *name, DataType type, int line)
     return new_symbol;
 }
 
-/**
- * print_symbol_table:
- * For Prints the Symbol Table For Debugging
- * Returns:
- * - void
- */
 void print_symbol_table()
 {
     printf("\n===== SYMBOL TABLE =====\n");
@@ -658,12 +510,6 @@ void print_symbol_table()
     printf("%d\n", count);
 }
 
-/**
- * free_symbol_table:
- * Free memory allocated for the symbol table
- * Return:
- * - void
- */
 void free_symbol_table()
 {
     Symbol *current = symbol_table;
@@ -677,24 +523,6 @@ void free_symbol_table()
     symbol_table = NULL;
 }
 
-/**
- * semantic_analysis:
- * Perform semantic analysis on an abstract syntax tree (AST).
- *
- * This function recursively traverses the AST and performs semantic checks
- * on each node, including:
- *  - Variable declarations: ensures variables are properly declared.
- *  - Assignments: verifies type and declaration validity.
- *  - Identifiers: checks that all variables used are declared.
- *  - Binary operations: verifies operand compatibility and type correctness.
- *
- * Any semantic errors (e.g., use of undeclared variables, invalid types)
- * are recorded via `record_error()` and counted in the global
- * `semantic_errors` variable.
- *
- * @param Pointer to the current AST node being analyzed.
- *
- */
 void semantic_analysis(ASTNode *node)
 {
     if (node == NULL)
@@ -724,12 +552,10 @@ void semantic_analysis(ASTNode *node)
     case NODE_UNARY_OP:
         check_unary_operation(node);
         break;
-    case NODE_COMMA_EXPR: // NEW: Handle comma expressions
-        // Just check both sides, no type checking needed
-        // The result type is the type of the right operand
+    case NODE_COMMA_EXPR:
         semantic_analysis(node->left);
         semantic_analysis(node->right);
-        return; // Don't recurse again below
+        return;
     }
 
     semantic_analysis(node->left);
@@ -760,7 +586,6 @@ void check_unary_operation(ASTNode *node)
         return;
     }
 
-    // Only int and char types can be incremented/decremented
     if (symbol->type != TYPE_INT && symbol->type != TYPE_CHAR)
     {
         record_error(node->token.line, "Increment/decrement requires numeric type");
@@ -768,16 +593,6 @@ void check_unary_operation(ASTNode *node)
     }
 }
 
-/**
- * check_declaration:
- * Perform semantic validation of a variable declaration node.
- * This function ensures that each variable declaration in the AST is
- * semantically correct. It checks:
- * - That the declared type is valid (not unknown).
- * - That the variable is properly inserted into the symbol table.
- * - That any initialization expression is type-compatible with the declared type.
- *
- */
 void check_declaration(ASTNode *node)
 {
     if (node->type != NODE_VAR_DECL || node->left == NULL)
@@ -792,18 +607,14 @@ void check_declaration(ASTNode *node)
         return;
     }
 
-    Symbol *symbol = insert_symbol(node->left->token.value, var_type, node->left->token.line); // Insert symbol based on the declaration node type
+    Symbol *symbol = insert_symbol(node->left->token.value, var_type, node->left->token.line);
 
     if (node->right != NULL)
     {
         DataType expr_type = get_expression_type(node->right);
         if (expr_type != TYPE_ERROR && expr_type != var_type)
         {
-            if (var_type == TYPE_CHAR && expr_type == TYPE_INT || var_type == TYPE_INT && expr_type == TYPE_CHAR)
-            {
-                // This is allowed in C - char variables can be assigned integer values
-            }
-            else
+            if (!(var_type == TYPE_CHAR && expr_type == TYPE_INT || var_type == TYPE_INT && expr_type == TYPE_CHAR))
             {
                 char error_msg[256];
                 const char *expected_type = (var_type == TYPE_INT) ? "int" : "char";
@@ -818,35 +629,20 @@ void check_declaration(ASTNode *node)
     }
 }
 
-/**
- * check_assignment :
- * Perform semantic checks for assignment statements.
- *
- * This function validates the semantics of assignment expressions in the AST.
- * It ensures that:
- *  - The left-hand side (LHS) of an assignment is a valid variable (identifier).
- *  - The variable being assigned to has been declared in the symbol table.
- *  - The assigned expression is type-compatible with the variable's declared type.
- *
- * Type compatibility follows relaxed C-style semantics:
- *  - Assignments between `int` and `char` are allowed implicitly.
- *  - Mismatched or undeclared types are reported as semantic errors.
- *
- */
 void check_assignment(ASTNode *node)
 {
-    if (node->type != NODE_ASSIGN || node->left == NULL || node->right == NULL) // Check if the node meets the assignment rule / format
+    if (node->type != NODE_ASSIGN || node->left == NULL || node->right == NULL)
         return;
 
-    if (node->left->type != NODE_IDENT) // Check if the left node of the assignment node is of type identifier
+    if (node->left->type != NODE_IDENT)
     {
         record_error(node->token.line, "Assignment to non-variable");
         semantic_errors++;
         return;
     }
 
-    Symbol *symbol = lookup_symbol(node->left->token.value); // Look up if the identifier is already declared in the symbol table
-    if (symbol == NULL)                                      // If it is not assigned , then send error for using undeclared variable
+    Symbol *symbol = lookup_symbol(node->left->token.value);
+    if (symbol == NULL)
     {
         char error_msg[256];
         snprintf(error_msg, sizeof(error_msg),
@@ -857,15 +653,11 @@ void check_assignment(ASTNode *node)
         return;
     }
 
-    DataType expr_type = get_expression_type(node->right); // Infer the datatype of the expression of the right node.
+    DataType expr_type = get_expression_type(node->right);
     if (expr_type != TYPE_ERROR && expr_type != symbol->type)
     {
-        if ((symbol->type == TYPE_INT && expr_type == TYPE_CHAR) ||
-            (symbol->type == TYPE_CHAR && expr_type == TYPE_INT))
-        {
-            // This is allowed in C
-        }
-        else
+        if (!((symbol->type == TYPE_INT && expr_type == TYPE_CHAR) ||
+              (symbol->type == TYPE_CHAR && expr_type == TYPE_INT)))
         {
             char error_msg[256];
             const char *expected_type = (symbol->type == TYPE_INT) ? "int" : "char";
@@ -879,24 +671,13 @@ void check_assignment(ASTNode *node)
     }
 }
 
-/**
- * check_expression:
- * Perform semantic checks for binary expressions.
- *
- * This function validates binary operations (e.g., +, -, *, /, etc.) in the AST.
- * It ensures that:
- *  - Both operands are semantically valid and have resolvable data types.
- *  - The operand types are compatible for arithmetic operations.
- *  - Type mismatches are detected and reported unless compatible (e.g., int ↔ char).
- *
- */
 void check_expression(ASTNode *node)
 {
     if (node->type != NODE_BIN_OP)
         return;
 
-    DataType left_type = get_expression_type(node->left);   // Get type of left node
-    DataType right_type = get_expression_type(node->right); // Get type of right node
+    DataType left_type = get_expression_type(node->left);
+    DataType right_type = get_expression_type(node->right);
 
     if (node->token.type == TOK_DIV)
     {
@@ -910,12 +691,8 @@ void check_expression(ASTNode *node)
 
     if (left_type != TYPE_ERROR && right_type != TYPE_ERROR && left_type != right_type)
     {
-        if ((left_type == TYPE_INT && right_type == TYPE_CHAR) ||
-            (left_type == TYPE_CHAR && right_type == TYPE_INT))
-        {
-            // This is allowed in C - chars are promoted to int in expressions
-        }
-        else
+        if (!((left_type == TYPE_INT && right_type == TYPE_CHAR) ||
+              (left_type == TYPE_CHAR && right_type == TYPE_INT)))
         {
             char error_msg[256];
             const char *left_str = (left_type == TYPE_INT) ? "int" : "char";
@@ -929,19 +706,6 @@ void check_expression(ASTNode *node)
     }
 }
 
-/**
- * get_expresion_type:
- * Determine the resulting data type of an expression node.
- *
- * This function performs type inference on an expression subtree within the AST.
- * It recursively analyzes identifiers, literals, and binary operations to deduce
- * the resulting `DataType` (e.g., `TYPE_INT`, `TYPE_CHAR`).
- *
- * The logic reflects standard C type promotion rules:
- *  - Any expression containing an `int` operand yields an `int` result.
- *  - `char` + `char` yields `char`.
- *  - Undeclared identifiers or structurally invalid expressions return `TYPE_ERROR`.
- */
 DataType get_expression_type(ASTNode *node)
 {
     if (node == NULL)
@@ -981,22 +745,13 @@ DataType get_expression_type(ASTNode *node)
         return get_expression_type(node->left);
     case NODE_ASSIGN:
         return get_expression_type(node->left);
-    case NODE_COMMA_EXPR: // NEW: Comma expression type is the type of rightmost expr
+    case NODE_COMMA_EXPR:
         return get_expression_type(node->right);
     default:
         return TYPE_ERROR;
     }
 }
 
-/**
- * create_tac_node :
- * Create new node in the TAC list
- * Parameters:
- * - type - type of TACNode
- * - result - the left hand side of the statement
- * - arg1 - the first argument after the assignment
- * - arg2 - the second argument after the assignment
- */
 TACNode *create_tac_node(TACType type, const char *result, const char *arg1, const char *arg2)
 {
     TACNode *node = malloc(sizeof(TACNode));
@@ -1013,14 +768,6 @@ TACNode *create_tac_node(TACType type, const char *result, const char *arg1, con
     return node;
 }
 
-/**
- * print_tac:
- * For Debugging , prints the Whole Three Address Code
- * Parameters:
- * - tac - head of the TAC linked list
- * Returns:
- * - void
- */
 void print_tac(TACNode *tac)
 {
     printf("\n===== THREE ADDRESS CODE =====\n");
@@ -1054,10 +801,10 @@ void print_tac(TACNode *tac)
         case TAC_COPY:
             printf("%s = %s\n", current->result, current->arg1);
             break;
-        case TAC_INC: // New case
+        case TAC_INC:
             printf("%s = %s + %s\n", current->result, current->arg1, current->arg2);
             break;
-        case TAC_DEC: // New case
+        case TAC_DEC:
             printf("%s = %s - %s\n", current->result, current->arg1, current->arg2);
             break;
         default:
@@ -1067,14 +814,6 @@ void print_tac(TACNode *tac)
     }
 }
 
-/**
- * free_tac:
- * Free all he TAC nodes in the linked list
- * Parameters:
- * - tac - head of the TAC linked list
- * Returns:
- * - void
- */
 void free_tac(TACNode *tac)
 {
     TACNode *current = tac;
@@ -1193,21 +932,18 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
         return rhs_tac;
     }
 
-    case NODE_COMMA_EXPR: // NEW: Generate TAC for comma expressions
+    case NODE_COMMA_EXPR:
     {
-        // Evaluate left side (for side effects)
+
         TACNode *left_tac = generate_tac_expr(node->left, tac_tail);
 
-        // Free the temporary from left if it's not used
         if (left_tac && left_tac->result && is_register(left_tac->result))
         {
             free_temp_register(left_tac->result);
         }
 
-        // Evaluate right side (this is the result)
         TACNode *right_tac = generate_tac_expr(node->right, tac_tail);
 
-        // Return the right side result
         return right_tac;
     }
 
@@ -1221,8 +957,6 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
             char *var_name = node->left->token.value;
             char *temp = get_temp_register();
 
-            // For postfix: load current value first, then modify variable
-            // Create a copy instruction to save old value
             TACNode *load_tac = create_tac_node(TAC_COPY, temp, var_name, NULL);
             if (*tac_tail)
             {
@@ -1231,7 +965,6 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
             }
             *tac_tail = load_tac;
 
-            // Then perform the increment/decrement
             TACType op_type = (node->token.type == TOK_INCREMENT) ? TAC_INC : TAC_DEC;
             TACNode *op_tac = create_tac_node(op_type, var_name, var_name, "1");
 
@@ -1242,7 +975,6 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
             }
             *tac_tail = op_tac;
 
-            // Return the load_tac which holds the old value in temp register
             return load_tac;
         }
 
@@ -1253,26 +985,18 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
         return NULL;
     }
 }
-/**
- * generate_tac_decl:
- * Generates TAC for variable declaration
- * Parameters :
- * - node - Head of the AST Linked List
- * - tac_tail : the last entry in the TAC linked list
- * Returns:
- * - TACNode
- */
+
 TACNode *generate_tac_decl(ASTNode *node, TACNode **tac_tail)
 {
     if (node->type != NODE_VAR_DECL || node->left == NULL)
         return NULL;
 
-    char *var_name = node->left->token.value; // get the variable name from token of left node
+    char *var_name = node->left->token.value;
 
-    if (node->right != NULL) // Check if the right node is not null meaning that it has assignment
+    if (node->right != NULL)
     {
 
-        TACNode *expr_tac = generate_tac_expr(node->right, tac_tail); // Perform TAC Generation for Expressions
+        TACNode *expr_tac = generate_tac_expr(node->right, tac_tail);
         if (expr_tac)
         {
             TACNode *assign_tac = create_tac_node(TAC_COPY, var_name, expr_tac->result, NULL);
@@ -1292,10 +1016,6 @@ TACNode *generate_tac_decl(ASTNode *node, TACNode **tac_tail)
     return NULL;
 }
 
-/**
- * generate_tac_assign:
- * Generate TAC for Assignment TAC type
- */
 TACNode *generate_tac_assign(ASTNode *node, TACNode **tac_tail)
 {
     if (node->type != NODE_ASSIGN || node->left == NULL || node->right == NULL)
@@ -1310,7 +1030,7 @@ TACNode *generate_tac_assign(ASTNode *node, TACNode **tac_tail)
 
     return expr_tac;
 }
-// this function process the statement list recursively and generate TAC for each statement
+
 void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
 {
     if (stmt_list == NULL)
@@ -1330,7 +1050,7 @@ void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
             generate_tac_assign(stmt, tac_tail);
             break;
 
-        case NODE_UNARY_OP: // Add this case
+        case NODE_UNARY_OP:
             generate_tac_expr(stmt, tac_tail);
             break;
 
@@ -1359,7 +1079,7 @@ void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
         process_stmt_list(stmt_list->right, tac_tail);
     }
 }
-// generate_tac
+
 TACNode *generate_tac(ASTNode *ast)
 {
     if (ast == NULL)
@@ -1392,10 +1112,6 @@ TACNode *generate_tac(ASTNode *ast)
     return tac_head;
 }
 
-/**
- * create_mips_instruction
- * Initializes a MIPSInstruction Struct
- */
 MIPSInstruction *create_mips_instruction(MIPSInstructionType type, const char *rt, const char *rs, const char *rd, const char *base, const char *offset, const char *immediate)
 {
     MIPSInstruction *instr = malloc(sizeof(MIPSInstruction));
@@ -1415,10 +1131,6 @@ MIPSInstruction *create_mips_instruction(MIPSInstructionType type, const char *r
     return instr;
 }
 
-/**
- * get_var_memory_address:
- * Lookup for a varaible memory address in symbol table
- */
 int get_var_memory_address(char *var_name)
 {
     Symbol *symbol = lookup_symbol(var_name);
@@ -1429,10 +1141,6 @@ int get_var_memory_address(char *var_name)
     return 0;
 }
 
-/**
- * append_mips_instruction:
- * Append MIPSInstuction node to the linked list
- */
 void append_mips_instruction(MIPSInstruction **head, MIPSInstruction **tail, MIPSInstruction *new_instr)
 {
     if (*head == NULL)
@@ -1447,9 +1155,6 @@ void append_mips_instruction(MIPSInstruction **head, MIPSInstruction **tail, MIP
     }
 }
 
-/**
- * Free the mips instructions linked list
- */
 void free_mips_instructions(MIPSInstruction *head)
 {
     MIPSInstruction *temp;
@@ -1468,9 +1173,6 @@ void free_mips_instructions(MIPSInstruction *head)
     }
 }
 
-/**
- * Check if the current identifier   in the TAC is a register
- */
 bool is_register(char *name)
 {
     if (strcmp(name, "t0") == 0 || strcmp(name, "t1") == 0 || strcmp(name, "t2") == 0 ||
@@ -1484,9 +1186,6 @@ bool is_register(char *name)
         return false;
 }
 
-/**
- * Generate Assembly Code
- */
 MIPSInstruction *generate_assembly_code(TACNode *tac)
 {
     if (tac == NULL)
@@ -1556,35 +1255,32 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 }
                 else
                 {
-                    // Regular character
+
                     sprintf(imm_str, "%d", (int)current->arg1[0]);
                 }
                 instr = create_mips_instruction(MIPS_DADDIU, current->result, "zero", NULL, NULL, NULL, imm_str);
             }
             else
             {
-                // Numeric literal
+
                 instr = create_mips_instruction(MIPS_DADDIU, current->result, "zero", NULL, NULL, NULL, current->arg1);
             }
             break;
 
-        case TAC_INC: // Changed from TAC_INC
+        case TAC_INC:
         {
             char offset_str[12];
             sprintf(offset_str, "%d", get_var_memory_address(current->result));
 
-            // Load variable
             char *temp_reg = get_temp_register();
             MIPSInstruction *load = create_mips_instruction(
                 MIPS_LD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
             append_mips_instruction(&head, &tail, load);
 
-            // Add 1
             MIPSInstruction *add = create_mips_instruction(
                 MIPS_DADDIU, temp_reg, temp_reg, NULL, NULL, NULL, "1");
             append_mips_instruction(&head, &tail, add);
 
-            // Store back
             instr = create_mips_instruction(
                 MIPS_SD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
 
@@ -1592,23 +1288,20 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
         }
         break;
 
-        case TAC_DEC: // Changed from TAC_DEC
+        case TAC_DEC:
         {
             char offset_str[12];
             sprintf(offset_str, "%d", get_var_memory_address(current->result));
 
-            // Load variable
             char *temp_reg = get_temp_register();
             MIPSInstruction *load = create_mips_instruction(
                 MIPS_LD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
             append_mips_instruction(&head, &tail, load);
 
-            // Subtract 1
             MIPSInstruction *sub = create_mips_instruction(
                 MIPS_DADDIU, temp_reg, temp_reg, NULL, NULL, NULL, "-1");
             append_mips_instruction(&head, &tail, sub);
 
-            // Store back
             instr = create_mips_instruction(
                 MIPS_SD, temp_reg, NULL, NULL, "zero", offset_str, NULL);
 
@@ -1643,7 +1336,7 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                     NULL);
             }
         }
-        break; // Removed duplicate break
+        break;
 
         case TAC_ADD:
         {
@@ -1652,7 +1345,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1664,7 +1356,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1676,10 +1367,8 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform addition: result = arg1 + arg2
             instr = create_mips_instruction(MIPS_DADDU, reg2, reg1, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1694,7 +1383,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1706,7 +1394,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1718,10 +1405,8 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform subtraction: result = arg1 - arg2
             instr = create_mips_instruction(MIPS_DSUBU, reg2, reg1, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1736,7 +1421,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1748,7 +1432,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1760,12 +1443,10 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform multiplication
             MIPSInstruction *mult = create_mips_instruction(MIPS_DMULT, reg2, reg1, NULL, NULL, NULL, NULL);
             append_mips_instruction(&head, &tail, mult);
             instr = create_mips_instruction(MIPS_MFLO, NULL, NULL, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1780,7 +1461,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
             bool free_reg1 = false;
             bool free_reg2 = false;
 
-            // Load arg1 if it's a variable
             if (!is_register(current->arg1))
             {
                 reg1 = get_temp_register();
@@ -1792,7 +1472,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load1);
             }
 
-            // Load arg2 if it's a variable
             if (!is_register(current->arg2))
             {
                 reg2 = get_temp_register();
@@ -1804,12 +1483,10 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
                 append_mips_instruction(&head, &tail, load2);
             }
 
-            // Perform division
             MIPSInstruction *div = create_mips_instruction(MIPS_DDIV, reg2, reg1, NULL, NULL, NULL, NULL);
             append_mips_instruction(&head, &tail, div);
             instr = create_mips_instruction(MIPS_MFLO, NULL, NULL, current->result, NULL, NULL, NULL);
 
-            // Free temporary registers if they were allocated
             if (free_reg1)
                 free_temp_register(reg1);
             if (free_reg2)
@@ -1832,9 +1509,6 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
     return head;
 }
 
-/**
- * Dictionary for MIPSInstructionType Enum
- */
 const char *get_mips_mnemonic(MIPSInstructionType type)
 {
     switch (type)
@@ -1864,9 +1538,6 @@ const char *get_mips_mnemonic(MIPSInstructionType type)
     }
 }
 
-/**
- * Write assembly code into file
- */
 void write_assembly_to_file(MIPSInstruction *head, const char *filename)
 {
     FILE *fp = fopen(filename, "w");
@@ -1930,9 +1601,6 @@ void write_assembly_to_file(MIPSInstruction *head, const char *filename)
     printf("MIPS assembly written to %s\n", filename);
 }
 
-/**
- * Dictionary for binary equivalent for registers
- */
 char *get_register_binary(char *reg_name)
 {
     if (strcmp(reg_name, "zero") == 0)
@@ -1958,12 +1626,9 @@ char *get_register_binary(char *reg_name)
     else if (strcmp(reg_name, "t9") == 0)
         return "11001";
     else
-        return "00000"; // Default to zero for unknown registers
+        return "00000";
 }
 
-/**
- * Helper function for converting decimal to binary
- */
 void decimal_to_binary(int n, char *binary_str, int bits)
 {
     binary_str[bits] = '\0';
@@ -1974,9 +1639,6 @@ void decimal_to_binary(int n, char *binary_str, int bits)
     }
 }
 
-/**
- * write the machine code to file both binary and hex
- */
 void write_machine_code_to_file(MIPSInstruction *head, const char *filename_binary, const char *filename_hex)
 {
     FILE *fp = fopen(filename_binary, "w");
@@ -2002,7 +1664,7 @@ void write_machine_code_to_file(MIPSInstruction *head, const char *filename_bina
     while (curr)
     {
         char *binary_rep = malloc(33);
-        // Basic formatting depending on instruction type
+
         switch (curr->type)
         {
         case MIPS_DADDU:
@@ -2138,9 +1800,6 @@ void parser_error(const char *message)
     record_error(current_token.line, message);
 }
 
-/**
- * returns 1 if expected token is found else add new error message to error stream and return 0;
- */
 int expect_token(TokenType expected)
 {
     if (current_token.type == expected)
@@ -2157,10 +1816,10 @@ int expect_token(TokenType expected)
         : (expected == TOK_NUMBER)       ? "TOK_NUMBER"
         : (expected == TOK_CHAR_LITERAL) ? "TOK_CHAR_LITERAL"
         : (expected == TOK_ASSIGN)       ? "TOK_ASSIGN"
-        : (expected == TOK_PLUS_ASSIGN)  ? "TOK_PLUS_ASSIGN"  // New
-        : (expected == TOK_MINUS_ASSIGN) ? "TOK_MINUS_ASSIGN" // New
-        : (expected == TOK_MULT_ASSIGN)  ? "TOK_MULT_ASSIGN"  // New
-        : (expected == TOK_DIV_ASSIGN)   ? "TOK_DIV_ASSIGN"   // New
+        : (expected == TOK_PLUS_ASSIGN)  ? "TOK_PLUS_ASSIGN"
+        : (expected == TOK_MINUS_ASSIGN) ? "TOK_MINUS_ASSIGN"
+        : (expected == TOK_MULT_ASSIGN)  ? "TOK_MULT_ASSIGN"
+        : (expected == TOK_DIV_ASSIGN)   ? "TOK_DIV_ASSIGN"
         : (expected == TOK_PLUS)         ? "TOK_PLUS"
         : (expected == TOK_MINUS)        ? "TOK_MINUS"
         : (expected == TOK_MULT)         ? "TOK_MULT"
@@ -2169,8 +1828,8 @@ int expect_token(TokenType expected)
         : (expected == TOK_LPAREN)       ? "TOK_LPAREN"
         : (expected == TOK_RPAREN)       ? "TOK_RPAREN"
         : (expected == TOK_COMMA)        ? "TOK_COMMA"
-        : (expected == TOK_INCREMENT)    ? "TOK_INCREMENT" // New
-        : (expected == TOK_DECREMENT)    ? "TOK_DECREMENT" // New
+        : (expected == TOK_INCREMENT)    ? "TOK_INCREMENT"
+        : (expected == TOK_DECREMENT)    ? "TOK_DECREMENT"
         : (expected == TOK_EOF)          ? "TOK_EOF"
                                          : "TOK_ERROR";
 
@@ -2190,8 +1849,8 @@ int expect_token(TokenType expected)
              : (current_token.type == TOK_LPAREN)       ? "TOK_LPAREN"
              : (current_token.type == TOK_RPAREN)       ? "TOK_RPAREN"
              : (current_token.type == TOK_COMMA)        ? "TOK_COMMA"
-             : (current_token.type == TOK_INCREMENT)    ? "TOK_INCREMENT" // New
-             : (current_token.type == TOK_DECREMENT)    ? "TOK_DECREMENT" // New
+             : (current_token.type == TOK_INCREMENT)    ? "TOK_INCREMENT"
+             : (current_token.type == TOK_DECREMENT)    ? "TOK_DECREMENT"
              : (current_token.type == TOK_EOF)          ? "TOK_EOF"
                                                         : "TOK_ERROR");
 
@@ -2199,7 +1858,6 @@ int expect_token(TokenType expected)
     return 0;
 }
 
-// creates ast node in the linked list
 ASTNode *create_ast_node(NodeType type, Token token, ASTNode *left, ASTNode *right)
 {
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -2222,10 +1880,6 @@ void print_indent(int depth)
         printf("  ");
 }
 
-/**
- * print_ast:
- * For Debugging , Prints the entire ast linked list
- */
 void print_ast(ASTNode *node, int depth)
 {
     if (node == NULL)
@@ -2262,21 +1916,17 @@ void free_ast(ASTNode *node)
     free(node);
 }
 
-/**
- * CFG Variable <program> - <stmt_list>
- */
 ASTNode *parse_program()
 {
-    ASTNode *stmts = parse_stmt_list(); // Get Node for stmt_list
+    ASTNode *stmts = parse_stmt_list();
     if (current_token.type != TOK_EOF)
     {
         parser_error("Expected EOF after program");
     }
-    ASTNode *program = create_ast_node(NODE_PROGRAM, create_token(TOK_EOF, NULL), stmts, NULL); // If no error then return the program ASTNode
+    ASTNode *program = create_ast_node(NODE_PROGRAM, create_token(TOK_EOF, NULL), stmts, NULL);
     return program;
 }
 
-// CFG Variable - <stmt_list> -> <stmt> <stmt_list> | <stmt>
 ASTNode *parse_stmt_list()
 {
     if (current_token.type == TOK_EOF)
@@ -2331,7 +1981,6 @@ ASTNode *parse_stmt_list()
     return head;
 }
 
-// <stmt> -> <init_list> TOK_SEMICOLON | <assignment_stmt> TOK_SEMICOLON | TOK_SEMICOLON
 ASTNode *parse_stmt()
 {
     if (current_token.type == TOK_INT || current_token.type == TOK_CHAR)
@@ -2354,7 +2003,7 @@ ASTNode *parse_stmt()
     }
     else if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
     {
-        ASTNode *unary_stmt = parse_factor(); // reuse parse_factor for ++x / --x
+        ASTNode *unary_stmt = parse_factor();
         if (current_token.type == TOK_SEMICOLON)
             advance_token();
         else
@@ -2391,10 +2040,9 @@ ASTNode *parse_stmt()
     }
 }
 
-// <init_list> -> <init> | <init> TOK_COMMA <init_list>
 ASTNode *parse_init_list(Token type_token)
 {
-    // Parse first init
+
     ASTNode *first_decl = parse_init(type_token);
     if (first_decl == NULL)
     {
@@ -2443,7 +2091,6 @@ ASTNode *parse_init_list(Token type_token)
     }
 }
 
-// <init> -> TOK_IDENT | TOK_IDENT TOK_ASSIGN <assign_expr>
 ASTNode *parse_init(Token type_token)
 {
     if (current_token.type != TOK_IDENT)
@@ -2469,7 +2116,6 @@ ASTNode *parse_init(Token type_token)
     if (current_token.type == TOK_ASSIGN)
     {
         advance_token();
-        // This prevents: int a = 1, 2; which is invalid
         ASTNode *expr = parse_assignment_expression();
         if (expr != NULL)
         {
@@ -2479,7 +2125,7 @@ ASTNode *parse_init(Token type_token)
 
     return decl_node;
 }
-// <assignment_stmt> -> <assign_expr>
+
 ASTNode *parse_assignment()
 {
     ASTNode *node = parse_assignment_expression();
@@ -2488,12 +2134,10 @@ ASTNode *parse_assignment()
     return node;
 }
 
-// <assign_expr> -> TOK_IDENT TOK_ASSIGN <assign_expr> | <expr>
 ASTNode *parse_assignment_expression()
 {
     ASTNode *left = parse_additive_expression();
 
-    // Check for all assignment operators
     if (current_token.type == TOK_ASSIGN ||
         current_token.type == TOK_PLUS_ASSIGN ||
         current_token.type == TOK_MINUS_ASSIGN ||
@@ -2511,7 +2155,6 @@ ASTNode *parse_assignment_expression()
         TokenType op_type = current_token.type;
         advance_token();
 
-        // CHANGED: Parse comma expression instead of recursive assignment
         ASTNode *right = parse_comma_expression();
         if (!right)
         {
@@ -2519,7 +2162,6 @@ ASTNode *parse_assignment_expression()
             return NULL;
         }
 
-        // For compound assignments, convert to: var = var op expr
         if (op_type != TOK_ASSIGN)
         {
             Token bin_op_token;
@@ -2563,19 +2205,14 @@ ASTNode *parse_assignment_expression()
     return left;
 }
 
-// <comma_expr> -> <assign_expr> | <assign_expr> TOK_COMMA <comma_expr>
 ASTNode *parse_comma_expression()
 {
     ASTNode *left = parse_assignment_expression();
     if (!left)
         return NULL;
 
-    // Check if we have a comma operator (not a separator)
     if (current_token.type == TOK_COMMA)
     {
-        // Look ahead to see if this is a comma operator or separator
-        // In parentheses, comma is an operator
-        // After declarations or in function calls, it's a separator
 
         Token comma_tok = current_token;
         advance_token();
@@ -2583,18 +2220,16 @@ ASTNode *parse_comma_expression()
         ASTNode *right = parse_comma_expression();
         if (!right)
         {
-            // If parsing fails, might be end of expression
+
             return left;
         }
 
-        // Create comma expression node
         return create_ast_node(NODE_COMMA_EXPR, comma_tok, left, right);
     }
 
     return left;
 }
 
-// <expr> -> <term> <expr_tail>
 ASTNode *parse_additive_expression()
 {
     ASTNode *left = parse_term();
@@ -2605,7 +2240,6 @@ ASTNode *parse_additive_expression()
     return parse_additive_tail(left);
 }
 
-// <expr_tail> -> TOK_PLUS <term> <expr_tail> | TOK_MINUS <term> <expr_tail> | ε
 ASTNode *parse_additive_tail(ASTNode *left)
 {
     while (current_token.type == TOK_PLUS || current_token.type == TOK_MINUS)
@@ -2628,7 +2262,6 @@ ASTNode *parse_additive_tail(ASTNode *left)
     return left;
 }
 
-// <term> -> <factor> <term_tail>
 ASTNode *parse_term()
 {
     ASTNode *left = parse_factor();
@@ -2639,7 +2272,6 @@ ASTNode *parse_term()
     return parse_term_tail(left);
 }
 
-// <term_tail> -> TOK_MULT <factor> <term_tail> | TOK_DIV <factor> <term_tail> | ε
 ASTNode *parse_term_tail(ASTNode *left)
 {
     while (current_token.type == TOK_MULT || current_token.type == TOK_DIV)
@@ -2662,7 +2294,6 @@ ASTNode *parse_term_tail(ASTNode *left)
     return left;
 }
 
-// <factor> -> TOK_NUMBER | TOK_CHAR_LITERAL | TOK_IDENT | TOK_LPAREN <comma_expr> TOK_RPAREN | TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT | TOK_PLUS <factor> | TOK_MINUS <factor>
 ASTNode *parse_factor()
 {
     if (current_token.type == TOK_NUMBER)
@@ -2701,7 +2332,7 @@ ASTNode *parse_factor()
     else if (current_token.type == TOK_LPAREN)
     {
         advance_token();
-        // CHANGED: Parse comma expression inside parentheses
+
         ASTNode *expr = parse_comma_expression();
         if (expr == NULL)
         {
@@ -2714,10 +2345,6 @@ ASTNode *parse_factor()
                 advance_token();
             }
             return NULL;
-        }
-        if (!expect_token(TOK_RPAREN))
-        {
-            // Error already recorded
         }
         return expr;
     }
@@ -2759,7 +2386,6 @@ ASTNode *parse_factor()
     }
 }
 
-// postfix_expression → TOK_IDENT | TOK_IDENT TOK_INCREMENT | TOK_IDENT TOK_DECREMENT
 ASTNode *parse_postfix_expression()
 {
     if (current_token.type != TOK_IDENT)
@@ -2773,26 +2399,23 @@ ASTNode *parse_postfix_expression()
 
     ASTNode *ident_node = create_ast_node(NODE_IDENT, ident, NULL, NULL);
 
-    // Check for postfix ++ or --
     if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
     {
         Token op = current_token;
         advance_token();
 
-        // Create unary operation node
         ASTNode *unary_node = create_ast_node(NODE_UNARY_OP, op, ident_node, NULL);
         return unary_node;
     }
 
     return ident_node;
 }
-// <expression> -> <assign_expr>
+
 ASTNode *parse_expression()
 {
     return parse_assignment_expression();
 }
 
-// Init lexer -- clear exisitng lexer
 void init_lexer(const char *input_str)
 {
     if (input)
@@ -2802,7 +2425,6 @@ void init_lexer(const char *input_str)
     current_line = 1;
 }
 
-// Function to create token in the linked list
 Token create_token(TokenType type, const char *value)
 {
     Token token;
@@ -2820,16 +2442,14 @@ Token create_token(TokenType type, const char *value)
     return token;
 }
 
-// Helper function to check if character is valid char
 int is_identifier_char(char c)
 {
     return isalnum((unsigned char)c) || c == '_';
 }
 
-// Lexer function to get the next token
 Token get_next_token()
 {
-    // Ignore white spaces
+
     while (isspace((unsigned char)input[position]))
     {
         if (input[position] == '\n')
@@ -2837,7 +2457,6 @@ Token get_next_token()
         position++;
     }
 
-    // Ignore Comments and check for /=
     if (input[position] == '/')
     {
         if (input[position + 1] == '/')
@@ -2865,25 +2484,21 @@ Token get_next_token()
             return get_next_token();
         }
 
-        // Check for /= BEFORE returning single /
         if (input[position + 1] == '=')
         {
             position += 2;
             return create_token(TOK_DIV_ASSIGN, "/=");
         }
 
-        // Single division operator
         position++;
         return create_token(TOK_DIV, "/");
     }
 
-    // Token for end of file
     if (input[position] == '\0')
     {
         return create_token(TOK_EOF, NULL);
     }
 
-    // Check for ++ and += before single +
     if (input[position] == '+')
     {
         if (input[position + 1] == '+')
@@ -2900,7 +2515,6 @@ Token get_next_token()
         return create_token(TOK_PLUS, "+");
     }
 
-    // Check for -- and -= before single -
     if (input[position] == '-')
     {
         if (input[position + 1] == '-')
@@ -2917,7 +2531,6 @@ Token get_next_token()
         return create_token(TOK_MINUS, "-");
     }
 
-    // Check for *= before single *
     if (input[position] == '*')
     {
         if (input[position + 1] == '=')
@@ -2929,7 +2542,6 @@ Token get_next_token()
         return create_token(TOK_MULT, "*");
     }
 
-    // Token for Escape Sequences
     if (input[position] == '\'')
     {
         position++;
@@ -2956,7 +2568,6 @@ Token get_next_token()
         return create_token(TOK_CHAR_LITERAL, char_val);
     }
 
-    // Token for stream of alpha characters or starting with _
     if (isalpha((unsigned char)input[position]) || input[position] == '_')
     {
         char ident[32] = {0};
@@ -2967,16 +2578,15 @@ Token get_next_token()
             ident[i++] = input[position++];
         }
         ident[i] = '\0';
-        // Check if token is reserved keywords for data types
+
         if (strcmp(ident, "int") == 0)
             return create_token(TOK_INT, ident);
         if (strcmp(ident, "char") == 0)
             return create_token(TOK_CHAR, ident);
-        // if not then it is identifier
+
         return create_token(TOK_IDENT, ident);
     }
 
-    // Token for number
     if (isdigit((unsigned char)input[position]))
     {
         char number[32] = {0};
@@ -2992,7 +2602,7 @@ Token get_next_token()
     }
 
     char current = input[position++];
-    // Token for Operators
+
     switch (current)
     {
     case '=':
@@ -3006,7 +2616,7 @@ Token get_next_token()
     case ',':
         return create_token(TOK_COMMA, ",");
     }
-    // Token for unidentified symbols
+
     char error[2] = {current, '\0'};
     return create_token(TOK_ERROR, error);
 }
@@ -3016,62 +2626,45 @@ void advance_token()
     current_token = get_next_token();
 }
 
-/**
- * read_file:
- * Reads the entire contents of a file into a dynamically allocated string.
- * Parameters:
- *  - filename: the name of the file to read
- * Returns:
- * - a pointer to the dynamically allocated string containing the file contents
- */
 char *read_file(char *filename)
 {
-    FILE *file = fopen(filename, "rb"); // Open File in Read Binary Mode
-
-    if (file == NULL) // Check if file opened successfully
+    FILE *file = fopen(filename, "rb");
+    if (file == NULL)
     {
         fprintf(stderr, "Error: Cannot open file '%s'\n", filename);
         return NULL;
     }
 
-    fseek(file, 0, SEEK_END);     // Move to end of file
-    long file_size = ftell(file); // Get current position (file size)
-    fseek(file, 0, SEEK_SET);     // Move back to beginning of file
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-    if (file_size <= 0) // Check if file is empty
+    if (file_size <= 0)
     {
         fprintf(stderr, "Error: File '%s' is empty or cannot be read\n", filename);
         fclose(file);
         return NULL;
     }
 
-    char *buffer = malloc(file_size + 1); // Allocate memory for file contents + null terminator
-    if (buffer == NULL)                   // Check if memory allocation was successful
+    char *buffer = malloc(file_size + 1);
+    if (buffer == NULL)
     {
         fprintf(stderr, "Error: Memory allocation failed\n");
         fclose(file);
         return NULL;
     }
 
-    size_t bytes_read = fread(buffer, 1, file_size, file); // Read file contents into buffer
-    if (bytes_read != (size_t)file_size)                   // Check if all bytes were read
+    size_t bytes_read = fread(buffer, 1, file_size, file);
+    if (bytes_read != (size_t)file_size)
     {
         fprintf(stderr, "Warning: only read %zu of %ld bytes\n", bytes_read, file_size);
     }
 
-    buffer[bytes_read] = '\0'; // Null-terminate the string
-    fclose(file);              // Close the file
+    buffer[bytes_read] = '\0';
+    fclose(file);
     return buffer;
 }
 
-/**
- * process_file:
- * Processes a source code file: reads, tokenizes, parses, performs semantic analysis,
- * generates TAC, and outputs MIPS assembly and machine code.
- * Parameters:
- * - filename: the name of the source code file to process
- * Returns: void
- */
 void process_file(char *filename)
 {
     printf("Processing file: %s\n", filename);
@@ -3079,13 +2672,13 @@ void process_file(char *filename)
     if (source_code == NULL)
         return;
 
-    init_lexer(source_code);        // Initialize Lexer
-    init_symbol_table();            // Intialize Symbol table
-    advance_token();                // Get the first token in the source code
-    ASTNode *ast = parse_program(); // Parse the source code
-    TACNode *tac = NULL;            // Declare TAC
+    init_lexer(source_code);
+    init_symbol_table();
+    advance_token();
+    ASTNode *ast = parse_program();
+    TACNode *tac = NULL;
 
-    semantic_analysis(ast); // Check Semantics
+    semantic_analysis(ast);
 
     if (error_count > 0)
     {
@@ -3093,11 +2686,11 @@ void process_file(char *filename)
     }
     else
     {
-        tac = generate_tac(ast); // If no syntax and symantic errors then generate TAC
+        tac = generate_tac(ast);
         if (tac)
         {
-            assembly_code = generate_assembly_code(tac); // if tac is generated successfuly then generate assembly code.
-            if (assembly_code)                           // If assembly is generated successfully , generate machine code
+            assembly_code = generate_assembly_code(tac);
+            if (assembly_code)
             {
                 write_assembly_to_file(assembly_code, "output_mips64.txt");
                 write_machine_code_to_file(assembly_code, "output_machine_code_binary.txt", "output_machine_code_hex.txt");
@@ -3105,7 +2698,7 @@ void process_file(char *filename)
         }
     }
 
-    if (DEBUG_MODE) // Switch for debug mode
+    if (DEBUG_MODE)
     {
         printf("DEBUG MODE TRUE: Printing AST , SYMBOL TABLE AND TAC.\n");
         printf("\n===== AST =====\n");
@@ -3119,7 +2712,6 @@ void process_file(char *filename)
         }
     }
 
-    // Free Allocated Memories
     free_ast(ast);
     free_tac(tac);
     free_mips_instructions(assembly_code);
