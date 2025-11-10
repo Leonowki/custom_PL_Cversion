@@ -308,7 +308,6 @@ DataType get_expression_type(ASTNode *node);
 void check_unary_operation(ASTNode *node);
 
 // Parse and Semantic Error Handling Function Prototypes
-void record_error(int line, const char *message);
 void print_errors();
 void clear_errors();
 
@@ -323,37 +322,12 @@ TACNode *generate_tac_assign(ASTNode *node, TACNode **tac_tail);
 
 char *get_temp_register();
 void free_temp_register(char *reg_name);
-void reset_temp_registers();
 
 void record_error(int line, const char *message);
-void print_errors();
-void clear_errors();
-
-char *get_temp_register();
-void free_temp_register(char *reg_name);
 void reset_temp_registers();
 
-void init_symbol_table();
-int get_type_size(DataType type);
-
-DataType get_type_from_token(Token token);
-Symbol *lookup_symbol(const char *name);
-Symbol *insert_symbol(const char *name, DataType type, int line);
-void print_symbol_table();
-
-void check_declaration(ASTNode *node);
-void check_assignment(ASTNode *node);
-void check_expression(ASTNode *node);
-DataType get_expression_type(ASTNode *node);
-
-TACNode *create_tac_node(TACType type, const char *result, const char *arg1, const char *arg2);
-void print_tac(TACNode *tac);
-void free_tac(TACNode *tac);
-TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail);
-TACNode *generate_tac_decl(ASTNode *node, TACNode **tac_tail);
-TACNode *generate_tac_assign(ASTNode *node, TACNode **tac_tail);
 void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail);
-TACNode *generate_tac(ASTNode *ast);
+
 
 MIPSInstruction *create_mips_instruction(MIPSInstructionType type, const char *rt, const char *rs, const char *rd, const char *base, const char *offset, const char *immediate);
 int get_var_memory_address(char *var_name);
@@ -1241,50 +1215,39 @@ TACNode *generate_tac_expr(ASTNode *node, TACNode **tac_tail)
     }
 
     case NODE_UNARY_OP:
+{
+    if (node->token.type == TOK_INCREMENT || node->token.type == TOK_DECREMENT)
     {
-        if (node->token.type == TOK_INCREMENT || node->token.type == TOK_DECREMENT)
+        if (node->left == NULL || node->left->type != NODE_IDENT)
+            return NULL;
+        
+        char *var_name = node->left->token.value;
+        char *temp = get_temp_register();
+        
+        // For postfix: load current value first, then modify variable
+        // Create a copy instruction to save old value
+        TACNode *load_tac = create_tac_node(TAC_COPY, temp, var_name, NULL);
+        if (*tac_tail)
         {
-            if (node->left == NULL || node->left->type != NODE_IDENT)
-                return NULL;
-            
-            char *var_name = node->left->token.value;
-            TACType op_type = (node->token.type == TOK_INCREMENT) ? TAC_INC : TAC_DEC;
-            TACNode *op_tac = create_tac_node(op_type, var_name, var_name, "1");
-            
-            if (*tac_tail)
-            {
-                (*tac_tail)->next = op_tac;
-                op_tac->prev = *tac_tail;
-            }
-            *tac_tail = op_tac;
-            return op_tac;
+            (*tac_tail)->next = load_tac;
+            load_tac->prev = *tac_tail;
         }
-
-        if (node->token.type == TOK_PLUS)
+        *tac_tail = load_tac;
+        
+        // Then perform the increment/decrement
+        TACType op_type = (node->token.type == TOK_INCREMENT) ? TAC_INC : TAC_DEC;
+        TACNode *op_tac = create_tac_node(op_type, var_name, var_name, "1");
+        
+        if (*tac_tail)
         {
-            return generate_tac_expr(node->left, tac_tail);
+            (*tac_tail)->next = op_tac;
+            op_tac->prev = *tac_tail;
         }
-
-        if (node->token.type == TOK_MINUS)
-        {
-            TACNode *operand_tac = generate_tac_expr(node->left, tac_tail);
-            if (!operand_tac)
-                return NULL;
-
-            char *operand = operand_tac->result;
-            char *temp = get_temp_register();
-            TACNode *neg_tac = create_tac_node(TAC_SUB, temp, "0", operand);
-
-            if (*tac_tail)
-            {
-                (*tac_tail)->next = neg_tac;
-                neg_tac->prev = *tac_tail;
-            }
-            *tac_tail = neg_tac;
-
-            free_temp_register(operand);
-            return neg_tac;
-        }
+        *tac_tail = op_tac;
+        
+        // Return the load_tac which holds the old value in temp register
+        return load_tac;
+    }
 
         return NULL;
     }
@@ -1635,7 +1598,7 @@ MIPSInstruction *generate_assembly_code(TACNode *tac)
         }
         break;  // Removed duplicate break
 
-                case TAC_ADD:
+        case TAC_ADD:
         {
             char *reg1 = current->arg1;
             char *reg2 = current->arg2;
