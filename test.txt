@@ -1,0 +1,6 @@
+/* Increment/decrement */
+int inc_test = 0;
+inc_test = ++inc_test + 1;
+int post = inc_test++;
+
+    

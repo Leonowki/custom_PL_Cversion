@@ -1,0 +1,18 @@
+.data
+
+.code
+
+daddiu $t0, $zero, 0
+sd $t0, 0($zero)
+ld $t0, 0($zero)
+daddiu $t0, $t0, 1
+sd $t0, 0($zero)
+daddiu $t0, $zero, 1
+ld $t0, 0($zero)
+daddu $t1, $t0, $t0
+sd $t1, 0($zero)
+ld $t0, 0($zero)
+daddiu $t0, $t0, 1
+sd $t0, 0($zero)
+ld $t0, 0($zero)
+sd $t0, 8($zero)
