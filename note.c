@@ -55,8 +55,7 @@ int main(void)
 
     /* Tricky operator combos */
     int u = 3, v = 4, w = 5;
-    int tricky1 = u++ + v;  /* (u++) + v */
-    int tricky2 = v-- - -w; /* (v--) - (-w) */
+
 
     /* Comma operator with assignments */
     int tmp = 0;
@@ -90,7 +89,6 @@ int main(void)
     printf("spaced = 0x%X, compact = 0x%X\n", spaced, compact);
     printf("m = 0x%X , n = 0x%X , o = 0x%X\n", m, n, o);
     printf("assoc1 = 0x%X, assoc2 = 0x%X\n", assoc1, assoc2);
-    printf("tricky1 = 0x%X, tricky2 = 0x%X\n", tricky1, tricky2);
     printf("u= 0x%X , v = 0x%X , w = 0x%X\n", u, v, w);
     printf("tmp = 0x%X\n", tmp);
     printf("shadow = 0x%X\n", shadow);
