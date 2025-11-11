@@ -239,57 +239,58 @@ void free_ast(ASTNode *node);
 void print_indent(int depth);
 
 /**
-        <program> ::= <stmt_list> TOK_EOF
+        parse_program → parse_stmt_list TOK_EOF
 
-        <stmt_list> ::= <stmt> <stmt_list_tail>
-        <stmt_list_tail> ::= <stmt> <stmt_list_tail> | ε
-
-        <stmt> ::= <decl_stmt> <semi_tail>
-                | <assign_stmt> <semi_tail>
-                | <unary_stmt> <semi_tail>
-                | <semi_tail>
-
-        <semi_tail> ::= TOK_SEMICOLON <semi_tail> | ε
-
-        <decl_stmt> ::= <type_spec> <init_list>
-        <type_spec> ::= TOK_INT | TOK_CHAR
-        <init_list> ::= <init> <init_list_tail>
-        <init_list_tail> ::= TOK_COMMA <init> <init_list_tail> | ε
-        <init> ::= TOK_IDENT [ TOK_ASSIGN <assignment_expression> ]
-
-        <assign_stmt> ::= <assignment_expression>
-        <assignment_expression> ::= <additive_expression> <assign_op_tail>
-        <assign_op_tail> ::= TOK_ASSIGN <comma_expression>
-                        | TOK_PLUS_ASSIGN <comma_expression>
-                        | TOK_MINUS_ASSIGN <comma_expression>
-                        | TOK_MULT_ASSIGN <comma_expression>
-                        | TOK_DIV_ASSIGN <comma_expression>
+        parse_stmt_list → parse_stmt parse_stmt_list
                         | ε
 
-        <comma_expression> ::= <assignment_expression> <comma_tail>
-        <comma_tail> ::= TOK_COMMA <comma_expression> | ε
+        parse_stmt → TOK_INT parse_init_list TOK_SEMICOLON
+                | TOK_CHAR parse_init_list TOK_SEMICOLON
+                | parse_factor TOK_SEMICOLON
+                | parse_assignment TOK_SEMICOLON
+                | TOK_SEMICOLON
 
-        <additive_expression> ::= <term> <additive_tail>
-        <additive_tail> ::= TOK_PLUS <term> <additive_tail>
-                        | TOK_MINUS <term> <additive_tail>
+        parse_init_list → parse_init
+                        | parse_init TOK_COMMA parse_init_list
+
+        parse_init → TOK_IDENT
+                | TOK_IDENT TOK_ASSIGN parse_assignment_expression
+
+        parse_assignment → parse_assignment_expression
+
+        parse_assignment_expression → parse_additive_expression
+                                    | TOK_IDENT (TOK_ASSIGN | TOK_PLUS_ASSIGN | TOK_MINUS_ASSIGN | TOK_MULT_ASSIGN | TOK_DIV_ASSIGN) parse_comma_expression
+
+        parse_comma_expression → parse_assignment_expression
+                            | parse_assignment_expression TOK_COMMA parse_comma_expression
+
+        parse_additive_expression → parse_term parse_additive_tail
+
+        parse_additive_tail → TOK_PLUS parse_term parse_additive_tail
+                            | TOK_MINUS parse_term parse_additive_tail
+                            | ε
+
+        parse_term → parse_factor parse_term_tail
+
+        parse_term_tail → TOK_MULT parse_factor parse_term_tail
+                        | TOK_DIV parse_factor parse_term_tail
                         | ε
 
-        <term> ::= <factor> <term_tail>
-        <term_tail> ::= TOK_MULT <factor> <term_tail>
-                    | TOK_DIV <factor> <term_tail>
-                    | ε
+        parse_factor → TOK_NUMBER
+                    | TOK_CHAR_LITERAL
+                    | TOK_INCREMENT TOK_IDENT
+                    | TOK_DECREMENT TOK_IDENT
+                    | parse_postfix_expression
+                    | TOK_LPAREN parse_comma_expression TOK_RPAREN
+                    | TOK_PLUS parse_factor
+                    | TOK_MINUS parse_factor
 
-        <factor> ::= TOK_NUMBER
-                | TOK_CHAR_LITERAL
-                | TOK_INCREMENT TOK_IDENT
-                | TOK_DECREMENT TOK_IDENT
-                | TOK_IDENT <postfix_op>
-                | TOK_LPAREN <comma_expression> TOK_RPAREN
-                | TOK_PLUS <factor>
-                | TOK_MINUS <factor>
+        parse_postfix_expression → TOK_IDENT
+                                | TOK_IDENT TOK_INCREMENT
+                                | TOK_IDENT TOK_DECREMENT
 
-        <postfix_op> ::= TOK_INCREMENT | TOK_DECREMENT | ε
-        <unary_stmt> ::= TOK_INCREMENT TOK_IDENT | TOK_DECREMENT TOK_IDENT
+        parse_expression → parse_assignment_expression
+
 
  */
 
@@ -1315,6 +1316,7 @@ void process_stmt_list(ASTNode *stmt_list, TACNode **tac_tail)
     if (stmt_list == NULL)
         return;
 
+    // If the left node of the stmt_list is not null then generate based tac on the node type
     if (stmt_list->left != NULL)
     {
         ASTNode *stmt = stmt_list->left;
@@ -1369,16 +1371,18 @@ TACNode *generate_tac(ASTNode *ast)
 
     reset_temp_registers();
 
+    // If the root node is of type NODE_PROGRAM, then its left node is always a stmt_list node/ production rule
     if (ast->type == NODE_PROGRAM && ast->left != NULL)
     {
         process_stmt_list(ast->left, &tac_tail);
     }
     else
     {
-
+        // If its not, then the node itself should be a statement_list node.
         process_stmt_list(ast, &tac_tail);
     }
 
+    // Get tac head after all the recursive calls via looping backwards in the linked list
     if (tac_tail != NULL)
     {
         tac_head = tac_tail;
@@ -2254,6 +2258,7 @@ stmt_list → stmt stmt_list | ε
 */
 ASTNode *parse_stmt_list()
 {
+    // Check if the current token type is of type END OF FILE, if it is then return NULL.
     if (current_token.type == TOK_EOF)
     {
         return NULL;
@@ -2278,6 +2283,7 @@ ASTNode *parse_stmt_list()
         return NULL;
     }
 
+    // Creates the first node in the statement list AST. This creates the left node.
     ASTNode *head = create_ast_node(NODE_STATEMENT_LIST, create_token(TOK_EOF, NULL), first, NULL);
     ASTNode *cur = head;
 
@@ -2318,18 +2324,24 @@ stmt → TOK_INT init_list TOK_SEMICOLON
 */
 ASTNode *parse_stmt()
 {
+    // TOK_INT init_list TOK_SEMICOLON | TOK_CHAR init_list TOK_SEMICOLON
     if (current_token.type == TOK_INT || current_token.type == TOK_CHAR)
     {
+        // Get the token_type based on the the current token
         Token type_token = current_token;
+        // Get the next token from the lexer
         advance_token();
+        // Parse the init_list based on the token type
         ASTNode *decls = parse_init_list(type_token);
 
+        // If after parsing the init list , the current token is of TOK_SEMICOLON then it is valid and continue to consume SEMI_COLONS
         if (current_token.type == TOK_SEMICOLON)
         {
             // This allows multiple semi colon at the end of the line e.g int a = b ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
             while (current_token.type == TOK_SEMICOLON)
                 advance_token();
         }
+        // If not then it has syntax error.
         else
         {
             parser_error("Expected ';' after declaration");
@@ -2337,15 +2349,19 @@ ASTNode *parse_stmt()
 
         return decls;
     }
+    // TOK_INCREMENT factor TOK_SEMICOLON | TOK_DECREMENT factor TOK_SEMICOLON
     else if (current_token.type == TOK_INCREMENT || current_token.type == TOK_DECREMENT)
     {
+        // Parse the unary statement using factor production rule.
         ASTNode *unary_stmt = parse_factor();
+        // Check if after the parsing the line is ended with SEMI_COLON and add error if not.
         if (current_token.type == TOK_SEMICOLON)
             advance_token();
         else
             parser_error("Expected ';' after unary statement");
         return unary_stmt;
     }
+    // TOK_IDENT assignment TOK_SEMICOLON
     else if (current_token.type == TOK_IDENT)
     {
         ASTNode *assign_stmt = parse_assignment();
@@ -2362,6 +2378,7 @@ ASTNode *parse_stmt()
 
         return assign_stmt;
     }
+    // TOK_SEMICOLON
     else if (current_token.type == TOK_SEMICOLON)
     {
         while (current_token.type == TOK_SEMICOLON)
@@ -2381,20 +2398,26 @@ init_list → init | init TOK_COMMA init_list
 */
 ASTNode *parse_init_list(Token type_token)
 {
+    // Parse the first declaration of init
     ASTNode *first_decl = parse_init(type_token);
     if (first_decl == NULL)
     {
         return NULL;
     }
 
+    // If the token type after parsing the first init is of type TOK_COMMA, then proceed with production rule init TOK_COMMA init_list
+    // Iterative version of the self call for init_list to avoid performance issues
     if (current_token.type == TOK_COMMA)
     {
         ASTNode *head = create_ast_node(NODE_DECL_LIST, create_token(TOK_EOF, NULL), first_decl, NULL);
         ASTNode *cur = head;
         while (current_token.type == TOK_COMMA)
         {
+            // Get next token
             advance_token();
+            // Parse the init production rule
             ASTNode *next_decl = parse_init(type_token);
+            // For error recovery, skip tokens if not a valid token . Prevents int a, , b; from being valid.
             if (next_decl == NULL)
             {
 
@@ -2413,7 +2436,7 @@ ASTNode *parse_init_list(Token type_token)
                     break;
                 }
             }
-
+            // If it is valid , create a node in the ast tree that has its left node as the next_decl and set the right node of the current node to next_decl.
             if (next_decl != NULL)
             {
                 ASTNode *node = create_ast_node(NODE_DECL_LIST, create_token(TOK_EOF, NULL), next_decl, NULL);
@@ -2421,10 +2444,12 @@ ASTNode *parse_init_list(Token type_token)
                 cur = node;
             }
         }
+        // Return head of the iterative self call
         return head;
     }
     else
     {
+        // return the head of the first_decl as head
         return first_decl;
     }
 }
