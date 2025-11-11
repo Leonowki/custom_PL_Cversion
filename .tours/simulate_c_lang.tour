@@ -136,6 +136,11 @@
       "file": "c_based_language.c",
       "description": "### Function: `parse_assignment_expression`\r\n\r\n**Grammar:**  \r\n\r\nassignment_expression → additive_expression | TOK_IDENT assign_op comma_expression\r\n\r\n**Purpose:**  \r\nParses an **assignment expression**, including both **simple assignments** and **compound assignments**, such as:\r\n\r\na = 5;\r\nb += 3;\r\ntotal *= rate + tax;",
       "line": 2507
+    },
+    {
+      "file": "c_based_language.c",
+      "description": "## semantic_analysis\r\n\r\n**Purpose**\r\n\r\nThe function performs semantic analysis on an Abstract Syntax Tree (AST). That means it checks whether the code makes sense in terms of types, variable declarations, and usage, after parsing has produced the AST.\r\n\r\nIt does recursive traversal of the AST and applies specific checks depending on the type of node.",
+      "line": 3132
     }
   ],
   "ref": "Redocumented"
